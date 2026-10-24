@@ -28,6 +28,11 @@ const MAX_SLIDE = 1.5
 const AIR_STEER = 2.5
 const LEAN = 0.3
 
+// Wipeout: hitting the side on the ground freezes the pose and tumbles the skier down the
+// slope (spin in rad/s, both decaying), then resets to the start gate.
+const TUMBLE_TIME = 2.5
+const TUMBLE_SPIN = 10
+
 // Wraps the clip's skier in a group we can slide and lean without fighting the baked animation
 // (the mixer rewrites the skier's own transform every frame).
 function rigSkier(root: THREE.Object3D) {
@@ -44,7 +49,7 @@ function rigSkier(root: THREE.Object3D) {
   return root.userData.rig as { rig: THREE.Group; skier: THREE.Object3D }
 }
 
-type Phase = 'loading' | 'ready' | 'inrun' | 'flight' | 'done'
+type Phase = 'loading' | 'ready' | 'inrun' | 'flight' | 'done' | 'crash'
 type Takeoff = { label: string; balance: number; timing: number }
 
 function rateTakeoff(balance: number, pressT: number | null): Takeoff & { distance: number } {
@@ -63,6 +68,7 @@ export default function SkiJumpPage() {
   const [phase, setPhase] = useState<Phase>('loading')
   const [takeoff, setTakeoff] = useState<Takeoff | null>(null)
   const [popup, setPopup] = useState<{ distance: number; id: number } | null>(null)
+  const [crashed, setCrashed] = useState(false)
 
   useEffect(() => {
     const mount = mountRef.current!
@@ -98,11 +104,7 @@ export default function SkiJumpPage() {
         if (disposed) return
         fixBlenderLights(env.scene)
         scene.add(env.scene)
-        // Show the skier waiting at the start gate until the player starts.
-        play(inrun, 0)
-        action!.paused = true
-        game.phase = 'ready'
-        setPhase('ready')
+        toGate(inrun)
         // Warm the rest in the background, one at a time.
         DISTANCES.reduce((p, m) => p.then(() => (disposed ? undefined : getClip(m).then(() => undefined))), Promise.resolve())
       },
@@ -129,9 +131,19 @@ export default function SkiJumpPage() {
       action.play()
       action.time = startTime
       mixer.addEventListener('finished', () => {
+        if (game.phase !== 'flight') return
         game.phase = 'done'
         setPhase('done')
       })
+    }
+
+    // Show the skier waiting at the start gate until the player starts.
+    const toGate = (inrun: GLTF) => {
+      Object.assign(game, { phase: 'ready', crashed: false, slide: 0, lean: 0, balance: 0 })
+      play(inrun, 0)
+      action!.paused = true
+      setCrashed(false)
+      setPhase('ready')
     }
 
     // --- game state (plain object: updated every frame, mirrored to React on phase changes) ---
@@ -146,6 +158,8 @@ export default function SkiJumpPage() {
       landed: false,
       slide: 0,
       lean: 0,
+      crashed: false,
+      crashTime: 0,
       left: false,
       right: false,
     }
@@ -189,6 +203,39 @@ export default function SkiJumpPage() {
     const onResize = () => renderer.setSize(mount.clientWidth, mount.clientHeight)
     window.addEventListener('resize', onResize)
 
+    // Wipeout state: frozen pose/camera, tumble displacement, velocity and spin.
+    const prevPos = new THREE.Vector3()
+    const velocity = new THREE.Vector3()
+    const crashSkier = new THREE.Vector3()
+    const crashCam = new THREE.Vector3()
+    const crashVel = new THREE.Vector3()
+    const crashDisp = new THREE.Vector3()
+    const spinAxis = new THREE.Vector3()
+    const spinQ = new THREE.Quaternion()
+    const crashQ = new THREE.Quaternion()
+    const pivot = new THREE.Vector3()
+    const UP = new THREE.Vector3(0, 1, 0)
+
+    const wipeout = () => {
+      game.phase = 'crash'
+      game.crashed = true
+      game.crashTime = 0
+      action!.paused = true
+      crashSkier.copy(rig!.skier.position)
+      crashCam.copy(cam!.position)
+      // Keep the speed we had, plus a shove off the side we hit.
+      crashVel.copy(velocity).addScaledVector(lateral, Math.sign(game.slide) * 3)
+      crashDisp.set(0, 0, 0)
+      crashQ.identity()
+      // Forward roll around the sideways axis, plus some cartwheel around the travel direction.
+      const travel = crashVel.lengthSq() > 1e-3 ? crashVel.clone().normalize() : runAxis.clone()
+      spinAxis.crossVectors(travel, UP).normalize().addScaledVector(travel, 0.6 * Math.sign(game.slide)).normalize()
+      setPopup(null)
+      setTakeoff(null)
+      setCrashed(true)
+      setPhase('crash')
+    }
+
     const lateral = new THREE.Vector3()
     const runAxis = new THREE.Vector3(0, 0, 1) // the jump runs along world Z
     const leanQ = new THREE.Quaternion()
@@ -204,22 +251,43 @@ export default function SkiJumpPage() {
         game.velocity += (game.balance * DRIFT + (Math.random() - 0.5) * GUST + push * PUSH) * dt
         game.velocity *= DAMPING
         game.balance += game.velocity * dt
-        if (Math.abs(game.balance) >= 1) {
-          game.balance = Math.sign(game.balance)
-          game.velocity = 0
-        }
+        const hitSide = Math.abs(game.balance) >= 1
+        if (hitSide) game.balance = Math.sign(game.balance)
         game.balanceSum += (1 - Math.abs(game.balance)) * dt
         game.balanceTime += dt
         if (needleRef.current) needleRef.current.style.left = `${50 + game.balance * 50}%`
         if (lipFillRef.current) lipFillRef.current.style.width = `${Math.min(action.time / TAKEOFF_T, 1) * 100}%`
         game.slide = game.balance * MAX_SLIDE
-        if (action.time >= TAKEOFF_T) takeOff()
+        if (hitSide) wipeout()
+        else if (action.time >= TAKEOFF_T) takeOff()
       } else if (game.phase === 'flight' || game.phase === 'done') {
         game.slide = THREE.MathUtils.clamp(game.slide + push * AIR_STEER * dt, -MAX_SLIDE, MAX_SLIDE)
+        // On the ground (after landing) the edge of the hill is a wipeout too; in the air it just stops you.
+        const onGround = game.phase === 'done' || game.landed
+        if (onGround && Math.abs(game.slide) >= MAX_SLIDE) wipeout()
       }
 
-      // Slide across the run and lean into the turn, pivoting around the skier.
-      if (rig && cam) {
+      if (game.phase === 'crash') {
+        game.crashTime += dt
+        crashVel.multiplyScalar(Math.exp(-1.5 * dt))
+        crashDisp.addScaledVector(crashVel, dt)
+        spinQ.setFromAxisAngle(spinAxis, TUMBLE_SPIN * Math.exp(-1.2 * game.crashTime) * dt)
+        crashQ.premultiply(spinQ)
+        if (game.crashTime >= TUMBLE_TIME) getClip(INRUN_CLIP).then((g) => !disposed && toGate(g))
+      }
+
+      if (rig && game.crashed && cam) {
+        // Tumble around the body's middle, carried down the slope; camera trails along.
+        pivot.copy(crashSkier).addScaledVector(UP, 0.9)
+        rig.rig.quaternion.copy(crashQ)
+        rig.rig.position.copy(pivot).applyQuaternion(crashQ).negate().add(pivot)
+          .addScaledVector(lateral, game.slide).add(crashDisp)
+        cam.position.copy(crashCam).addScaledVector(crashDisp, 0.85)
+      } else if (rig && cam) {
+        // Track speed for a wipeout.
+        if (dt > 0) velocity.copy(rig.skier.position).sub(prevPos).divideScalar(dt)
+        prevPos.copy(rig.skier.position)
+        // Slide across the run and lean into the turn, pivoting around the skier.
         game.lean = THREE.MathUtils.damp(game.lean, push * LEAN, 8, dt)
         // Pick the side of the run that is "right" on screen for the current camera.
         camRight.setFromMatrixColumn(cam.matrixWorld, 0)
@@ -261,6 +329,13 @@ export default function SkiJumpPage() {
       <div ref={mountRef} className="ski-jump__canvas" />
 
       {phase === 'loading' && <div className="ski-jump__banner">LOADING…</div>}
+
+      {crashed && (
+        <div className="ski-jump__takeoff">
+          <div className="ski-jump__takeoff-label">WIPEOUT!</div>
+          <div className="ski-jump__help">YOU HIT THE SIDE</div>
+        </div>
+      )}
 
       {(phase === 'ready' || phase === 'done') && (
         <div className="ski-jump__banner ski-jump__banner--bottom">
