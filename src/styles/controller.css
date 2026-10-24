@@ -1,0 +1,64 @@
+.controller {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 24px 16px;
+}
+
+.controller__form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+  max-width: 360px;
+  text-align: center;
+}
+
+.controller__input {
+  width: 100%;
+  padding: 16px 20px;
+  border: 1.5px solid rgba(244, 236, 224, 0.4);
+  border-radius: 12px;
+  background: rgba(244, 236, 224, 0.08);
+  color: #f4ece0;
+  font: inherit;
+  font-size: 1.2rem;
+  text-align: center;
+}
+
+.controller__input:focus {
+  outline: none;
+  border-color: #f4ece0;
+}
+
+.controller__input--code {
+  font-family: 'Exo 2', sans-serif;
+  font-size: 2.5rem;
+  font-weight: 900;
+  font-style: italic;
+  letter-spacing: 0.2em;
+}
+
+.controller__room {
+  margin: 0;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: rgba(244, 236, 224, 0.7);
+}
+
+.controller__message {
+  font-size: 1.2rem;
+  line-height: 1.5;
+}
+
+.controller__error {
+  margin: 0;
+  color: #ff8a80;
+}
+
+.controller .join-race--solid {
+  width: 100%;
+}

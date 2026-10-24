@@ -4,10 +4,12 @@ const JoinRaceButton = ({
   variant = 'solid',
   to,
   label = 'Join a race',
+  onClick,
 }: {
   variant?: 'solid' | 'outline'
   to?: string
   label?: string
+  onClick?: () => void
 }) => {
   const className = `join-race join-race--${variant}`
   const content = (
@@ -25,7 +27,7 @@ const JoinRaceButton = ({
   }
 
   return (
-    <button type="button" className={className}>
+    <button type="button" className={className} onClick={onClick}>
       {content}
     </button>
   )
