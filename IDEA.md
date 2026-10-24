@@ -8,21 +8,26 @@ Optimize for a working, polished demo, not for completeness. Ship the smallest v
 This is a browser revival of the 1988 Calgary Winter Olympics. A big screen (laptop or TV) hosts the experience, and players join from their phones, which act as controllers. It has three sections:
 
 1. **Menu**: the landing screen with an '88-styled title, a room code, and links to each section.
-2. **Ski Jump**: a 2D side-view ski jump game controlled by phone tilt and taps.
+2. **Ski Jump**: a 3D ski jump game, viewed from a side-on camera, built from our own Blender models and controlled by phone tilt and taps.
 3. **Bricks**: a live commemorative brick wall, inspired by the Olympic Plaza bricks, where people add a name or memory from their phone.
 
 ## Stack (do not change without asking)
 
 - **Vite + React + TypeScript** is the app shell.
 - **React Router** handles the routes listed below.
-- **Phaser 3** runs the ski jump game, mounted only on the game route.
-- **Supabase** provides Postgres for bricks and **Realtime broadcast channels** for phone-to-screen input.
+- **Three.js** (plain, no react-three-fiber) renders the ski jump game, mounted only on the game route. Models are made in Blender and loaded as `.glb` files with `GLTFLoader`.
+- **Firebase** is the backend. **Firestore** stores rooms, players and bricks. **Realtime Database** carries live controller input (tilt, taps), because Firestore only handles about one sustained write per second per document.
 - **Deploy:** Vercel or Netlify for the static frontend. Do not set up a custom WebSocket server.
 
 Env vars go in `.env.local` (never commit):
 ```
-VITE_SUPABASE_URL=
-VITE_SUPABASE_ANON_KEY=
+VITE_FIREBASE_API_KEY=
+VITE_FIREBASE_AUTH_DOMAIN=
+VITE_FIREBASE_PROJECT_ID=
+VITE_FIREBASE_STORAGE_BUCKET=
+VITE_FIREBASE_MESSAGING_SENDER_ID=
+VITE_FIREBASE_APP_ID=
+VITE_FIREBASE_DATABASE_URL=      # Realtime Database, for controller input
 ```
 
 ## Routes
@@ -30,7 +35,7 @@ VITE_SUPABASE_ANON_KEY=
 | Route | Device | Purpose |
 |---|---|---|
 | `/` | Big screen | Menu, room code display, QR code to join |
-| `/game/:room` | Big screen | Phaser ski jump |
+| `/game/:room` | Big screen | Lobby (room code, QR, players), then the Three.js ski jump |
 | `/play/:room` | Phone | Controller (tilt + tap) |
 | `/bricks` | Big screen | Live brick wall |
 | `/bricks/add` | Phone | Form to add a brick |
@@ -42,46 +47,42 @@ src/
   main.tsx
   App.tsx                 # router
   lib/
-    supabase.ts           # client
-    room.ts               # generate/validate 4-letter room codes
-    channel.ts            # realtime helpers (join, send, subscribe)
+    firebase.ts           # Firebase app, Firestore and Realtime Database clients
+    room.ts               # room codes, lobby, players (Firestore)
+    input.ts              # live controller input (Realtime Database)
   pages/
     Menu.tsx
-    GamePage.tsx          # mounts Phaser in useEffect, destroys on unmount
+    GamePage.tsx          # mounts the Three.js game in useEffect, destroys on unmount
     Controller.tsx
     Bricks.tsx
     AddBrick.tsx
   game/
-    config.ts
-    scenes/
-      BootScene.ts
-      JumpScene.ts
-      ResultsScene.ts
+    createGame.ts         # scene, camera, renderer, render loop; returns destroy()
+    physics.ts            # 2D inrun/takeoff/flight/landing math (x, y)
+    models.ts             # loads and caches .glb models
   styles/
     theme.css             # '88 palette + type
 public/
-  assets/                 # sprites, sounds
+  models/                 # .glb exports from Blender
+  assets/                 # sounds
 ```
 
 ## Realtime protocol
 
-Use one Supabase broadcast channel per room, named `room:{CODE}`.
+Room and lobby state live in Firestore and are already built in `src/lib/room.ts`:
 
-Phone → screen events:
+- `rooms/{CODE}`: `{ phase: 'lobby' | 'playing', activePlayerId?: string }`
+- `rooms/{CODE}/players/{playerId}`: `{ name, joinedAt }`
+- `rooms/{CODE}/results/{id}`: `{ playerId, distance, createdAt }` for the leaderboard
+
+Live controller input goes through Realtime Database at `input/{CODE}/{playerId}`. The phone overwrites its latest state, and the screen listens with `onValue`:
 ```ts
-{ type: 'join',  playerId: string, name: string }
-{ type: 'tilt',  playerId: string, beta: number, gamma: number }   // throttle to ~20/s
-{ type: 'press', playerId: string, action: 'jump' | 'tuck' }
-{ type: 'release', playerId: string, action: 'tuck' }
+{ beta: number, tuck: boolean, jumpAt: number | null }   // throttle tilt to ~20/s; jumpAt = time of the last jump tap
 ```
 
-Screen → phone events:
-```ts
-{ type: 'state', phase: 'lobby' | 'inrun' | 'flight' | 'landed', activePlayerId?: string }
-{ type: 'result', playerId: string, distance: number }
-```
+Phones learn whose turn it is and the game phase by watching `rooms/{CODE}`, and their distance from `rooms/{CODE}/results`.
 
-- Generate `playerId` with `crypto.randomUUID()` and store it in `sessionStorage`, wrapped in try/catch.
+- Generate `playerId` with a random string (not `crypto.randomUUID()`, which is missing on plain-HTTP pages) and store it in `sessionStorage`, wrapped in try/catch.
 - On iOS, `DeviceOrientationEvent.requestPermission()` **must** be called from a user tap. Show an "Enable motion" button first.
 - Always provide a tap-only fallback in case tilt is unavailable.
 
@@ -95,24 +96,31 @@ The game is turn-based, with one jumper at a time and the others watching their 
 4. **Landing:** the game measures distance in meters from the ramp lip and shows a results screen.
 5. A **leaderboard** for the room is kept in memory on the screen. Persistence is optional.
 
-Use Arcade physics or simple custom velocity math, whichever is faster to get feeling good. Placeholder rectangles are fine until the loop works.
+Keep the physics as simple custom 2D velocity math on x and y. Three.js only draws the scene, so no physics engine is needed. Placeholder boxes are fine until the loop works, and the Blender models replace them afterward.
+
+## 3D assets (Blender)
+
+- Export each model from Blender with **File → Export → glTF 2.0**, choosing the **.glb** format. Apply modifiers and include animations.
+- Save the exports in `public/models/` with simple names such as `skier.glb`, `ramp.glb` and `tower.glb`.
+- Model in meters, and point the skier down the ramp along +X so it matches the side-on camera.
+- Keep models low-poly with small textures, and aim for under about 5 MB in total so the game loads quickly on venue Wi-Fi.
+- Every model needs a placeholder box in code, so the game still runs before an asset is ready.
 
 ## Bricks
 
-Supabase table:
-```sql
-create table bricks (
-  id uuid primary key default gen_random_uuid(),
-  name text not null check (char_length(name) <= 40),
-  message text check (char_length(message) <= 80),
-  created_at timestamptz default now()
-);
-alter table bricks enable row level security;
-create policy "read all"   on bricks for select using (true);
-create policy "insert any" on bricks for insert with check (true);
+Firestore collection `bricks`, one document per brick: `{ name, message, createdAt }`.
+
+Security rules so anyone can read and add bricks, with length limits:
+```
+match /bricks/{id} {
+  allow read: if true;
+  allow create: if request.resource.data.name is string
+    && request.resource.data.name.size() <= 40
+    && (!('message' in request.resource.data) || request.resource.data.message.size() <= 80);
+}
 ```
 
-- `/bricks` renders a CSS grid of brick-shaped divs and subscribes to `postgres_changes` inserts so new bricks animate in live.
+- `/bricks` renders a CSS grid of brick-shaped divs and listens with `onSnapshot` so new bricks animate in live.
 - `/bricks/add` is a simple mobile form with client-side length limits and a basic profanity filter if time allows.
 - Seed about 30 bricks so the wall doesn't look empty during judging.
 
@@ -130,11 +138,11 @@ Work top-down. Commit after each step works.
 1. [ ] Scaffold Vite + React + TS + Router, set up the theme CSS, and deploy a hello-world to confirm the pipeline.
 2. [ ] Build the Menu with room code generation and a QR code linking to `/play/:room`.
 3. [ ] Set up the realtime round trip: the phone presses a button and the screen logs it. **Prove this early.**
-4. [ ] Build the Phaser game loop with keyboard controls: inrun, takeoff, flight, landing, distance.
+4. [ ] Build the Three.js game loop with placeholder boxes and keyboard controls: inrun, takeoff, flight, landing, distance.
 5. [ ] Swap keyboard input for phone events (tap first, then tilt).
 6. [ ] Build the Bricks wall with the add form, live inserts, and seed data.
 7. [ ] Add the results screen and room leaderboard.
-8. [ ] Polish: sprites, sound, transitions, and '88 styling.
+8. [ ] Polish: swap the placeholder boxes for the Blender models, then add sound, transitions, and '88 styling.
 9. [ ] Stretch goals: confetti or a flame on a record jump, multiple players' ghosts, persisted high scores.
 
 ## Definition of done
@@ -147,7 +155,7 @@ Work top-down. Commit after each step works.
 ## Rules for the agent
 
 - Don't add frameworks, state libraries, or a backend server beyond what's listed.
-- Keep secrets out of git. Only the anon key goes in the client.
+- Keep secrets out of git. Firebase web config values are public by design, so protect data with Firestore and Realtime Database security rules.
 - If something blocks you for more than about 20 minutes, choose the simpler path and leave a `TODO:` note.
 - Test the phone flow on a real device over the deployed URL. Motion sensors require HTTPS.
 - Before marking a step done, run `npm run build` and confirm it passes.

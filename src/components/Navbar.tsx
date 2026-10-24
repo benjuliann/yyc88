@@ -1,8 +1,12 @@
-import React from 'react'
+import Logo from './Logo'
+import JoinRaceButton from './JoinRaceButton'
 
 const Navbar = () => {
   return (
-    <div>Navbar</div>
+    <nav className="navbar">
+      <Logo />
+      <JoinRaceButton variant="outline" to="/bricks" label="Memorial" />
+    </nav>
   )
 }
 

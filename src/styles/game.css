@@ -1,0 +1,162 @@
+.lobby {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding: 36px 6% 48px;
+  overflow: hidden;
+  background:
+    linear-gradient(rgba(16, 26, 51, 0.4), rgba(16, 26, 51, 0.8)),
+    #101a33 url('/images/background.png') center bottom / cover no-repeat;
+}
+
+/* Falling snow: small slow flakes behind, larger faster ones in front. */
+.lobby::before,
+.lobby::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Each flake layer has its own odd tile size so the repeats don't line up into a grid. */
+.lobby::before {
+  background-image:
+    radial-gradient(circle at 12% 18%, rgba(255, 255, 255, 0.7) 0 1.5px, transparent 2px),
+    radial-gradient(circle at 63% 41%, rgba(255, 255, 255, 0.5) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 37% 77%, rgba(255, 255, 255, 0.6) 0 1.5px, transparent 2px),
+    radial-gradient(circle at 84% 9%, rgba(255, 255, 255, 0.5) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 51% 58%, rgba(255, 255, 255, 0.6) 0 1.5px, transparent 2px);
+  background-size: 173px 173px, 211px 211px, 251px 251px, 293px 293px, 337px 337px;
+  animation: snow-far 24s linear infinite;
+}
+
+.lobby::after {
+  background-image:
+    radial-gradient(circle at 23% 64%, rgba(255, 255, 255, 0.85) 0 2.5px, transparent 3px),
+    radial-gradient(circle at 71% 12%, rgba(255, 255, 255, 0.7) 0 2px, transparent 2.5px),
+    radial-gradient(circle at 46% 33%, rgba(255, 255, 255, 0.8) 0 2.5px, transparent 3px);
+  background-size: 263px 263px, 389px 389px, 457px 457px;
+  animation: snow-near 16s linear infinite;
+}
+
+/* Keep page content above the snow. */
+.lobby > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Each layer moves a whole number of its own tiles per loop, so it repeats seamlessly. */
+@keyframes snow-far {
+  to {
+    background-position: 173px 519px, 211px 633px, 251px 753px, 293px 879px, 337px 1011px;
+  }
+}
+
+@keyframes snow-near {
+  to {
+    background-position: 263px 789px, 389px 1167px, 457px 1371px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lobby::before,
+  .lobby::after {
+    animation: none;
+  }
+}
+
+.lobby--center {
+  align-items: center;
+  justify-content: center;
+}
+
+.lobby__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.lobby__count {
+  font-size: 0.85rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+}
+
+.lobby__join {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 40px;
+  margin: 56px 0 48px;
+}
+
+.lobby__qr {
+  padding: 12px;
+  border-radius: 12px;
+  background: #fff;
+  line-height: 0;
+}
+
+.lobby__label {
+  margin: 0;
+  font-size: 1.1rem;
+  letter-spacing: 0.08em;
+  color: rgba(244, 236, 224, 0.8);
+}
+
+.lobby__label strong {
+  color: #f4ece0;
+}
+
+.lobby__code {
+  margin: 4px 0 0;
+  font-family: 'Exo 2', sans-serif;
+  font-size: clamp(4rem, 11vw, 8rem);
+  font-weight: 900;
+  font-style: italic;
+  line-height: 1;
+  letter-spacing: 0.08em;
+}
+
+.lobby__waiting {
+  text-align: center;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: rgba(244, 236, 224, 0.7);
+}
+
+.lobby__players {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lobby__player {
+  padding: 10px 22px;
+  border-radius: 999px;
+  background: rgba(244, 236, 224, 0.12);
+  border: 1px solid rgba(244, 236, 224, 0.3);
+  font-weight: 500;
+  font-size: 1.1rem;
+  animation: pop-in 0.3s ease-out;
+}
+
+.lobby__actions {
+  display: flex;
+  justify-content: center;
+  margin-top: auto;
+  padding-top: 40px;
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+}

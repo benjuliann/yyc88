@@ -1,0 +1,46 @@
+.landing {
+  min-height: 100vh;
+  background: #101a33 url('/images/background.png') center bottom / cover no-repeat;
+}
+
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 36px 6%;
+}
+
+.landing__hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 72px 16px 0;
+  text-align: center;
+}
+
+.landing__eyebrow {
+  margin: 0 0 20px;
+  font-size: 0.8rem;
+  letter-spacing: 0.5em;
+  text-transform: uppercase;
+  color: rgba(244, 236, 224, 0.8);
+}
+
+.landing__tagline {
+  margin: 20px 0 36px;
+  font-size: clamp(1.4rem, 2.6vw, 2rem);
+  font-weight: 300;
+  letter-spacing: 0.45em;
+  text-transform: uppercase;
+}
+
+.landing__error {
+  margin-top: 16px;
+  color: #ff8a80;
+}
+
+@media (max-width: 600px) {
+  .navbar .join-race {
+    display: none;
+  }
+}
