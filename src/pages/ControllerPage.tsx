@@ -1,6 +1,7 @@
 import { useEffect, useState, type SubmitEvent } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Logo from '../components/Logo'
+import ArrowPad from '../components/ArrowPad'
 import { getPlayerId, isValidRoomCode, joinRoom, watchRoom, type Phase } from '../lib/room'
 import '../styles/controller.css'
 
@@ -71,12 +72,12 @@ function JoinRoom({ room }: { room: string }) {
   }
 
   if (joined) {
+    // The controller only appears once the host starts the race.
+    if (phase === 'playing') return <ArrowPad room={room} />
     return (
       <div className="controller__form">
         <Logo />
-        <p className="controller__message">
-          {phase === 'lobby' ? `You're in, ${name.trim()}! Look at the big screen.` : 'Race on!'}
-        </p>
+        <p className="controller__message">You're in, {name.trim()}! Look at the big screen.</p>
       </div>
     )
   }
