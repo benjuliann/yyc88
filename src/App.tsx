@@ -1,9 +1,9 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import Menu from './pages/Menu'
 import GamePage from './pages/GamePage'
-import Controller from './pages/Controller'
-import Bricks from './pages/Bricks'
-import AddBrick from './pages/AddBrick'
+import Controller from './pages/ControllerPage'
+import Bricks from './memorial/Bricks'
+import AddBrick from './memorial/AddBrick'
 
 function App() {
   return (
