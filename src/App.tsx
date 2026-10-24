@@ -10,6 +10,7 @@ function App() {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/game/:room" element={<GamePage />} />
+        <Route path="/play" element={<Controller />} />
         <Route path="/play/:room" element={<Controller />} />
         <Route path="/bricks" element={<MemorialPage />} />
       </Routes>
