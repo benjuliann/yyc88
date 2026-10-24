@@ -16,13 +16,18 @@ This is a browser revival of the 1988 Calgary Winter Olympics. A big screen (lap
 - **Vite + React + TypeScript** is the app shell.
 - **React Router** handles the routes listed below.
 - **Three.js** (plain, no react-three-fiber) renders the ski jump game, mounted only on the game route. Models are made in Blender and loaded as `.glb` files with `GLTFLoader`.
-- **Supabase** provides Postgres for bricks and **Realtime broadcast channels** for phone-to-screen input.
+- **Firebase** is the backend. **Firestore** stores rooms, players and bricks. **Realtime Database** carries live controller input (tilt, taps), because Firestore only handles about one sustained write per second per document.
 - **Deploy:** Vercel or Netlify for the static frontend. Do not set up a custom WebSocket server.
 
 Env vars go in `.env.local` (never commit):
 ```
-VITE_SUPABASE_URL=
-VITE_SUPABASE_ANON_KEY=
+VITE_FIREBASE_API_KEY=
+VITE_FIREBASE_AUTH_DOMAIN=
+VITE_FIREBASE_PROJECT_ID=
+VITE_FIREBASE_STORAGE_BUCKET=
+VITE_FIREBASE_MESSAGING_SENDER_ID=
+VITE_FIREBASE_APP_ID=
+VITE_FIREBASE_DATABASE_URL=      # Realtime Database, for controller input
 ```
 
 ## Routes
@@ -42,9 +47,9 @@ src/
   main.tsx
   App.tsx                 # router
   lib/
-    supabase.ts           # client
-    room.ts               # generate/validate 4-letter room codes
-    channel.ts            # realtime helpers (join, send, subscribe)
+    firebase.ts           # Firebase app, Firestore and Realtime Database clients
+    room.ts               # room codes, lobby, players (Firestore)
+    input.ts              # live controller input (Realtime Database)
   pages/
     Menu.tsx
     GamePage.tsx          # mounts the Three.js game in useEffect, destroys on unmount
@@ -64,23 +69,20 @@ public/
 
 ## Realtime protocol
 
-Use one Supabase broadcast channel per room, named `room:{CODE}`.
+Room and lobby state live in Firestore and are already built in `src/lib/room.ts`:
 
-Phone → screen events:
+- `rooms/{CODE}`: `{ phase: 'lobby' | 'playing', activePlayerId?: string }`
+- `rooms/{CODE}/players/{playerId}`: `{ name, joinedAt }`
+- `rooms/{CODE}/results/{id}`: `{ playerId, distance, createdAt }` for the leaderboard
+
+Live controller input goes through Realtime Database at `input/{CODE}/{playerId}`. The phone overwrites its latest state, and the screen listens with `onValue`:
 ```ts
-{ type: 'join',  playerId: string, name: string }
-{ type: 'tilt',  playerId: string, beta: number, gamma: number }   // throttle to ~20/s
-{ type: 'press', playerId: string, action: 'jump' | 'tuck' }
-{ type: 'release', playerId: string, action: 'tuck' }
+{ beta: number, tuck: boolean, jumpAt: number | null }   // throttle tilt to ~20/s; jumpAt = time of the last jump tap
 ```
 
-Screen → phone events:
-```ts
-{ type: 'state', phase: 'lobby' | 'inrun' | 'flight' | 'landed', activePlayerId?: string }
-{ type: 'result', playerId: string, distance: number }
-```
+Phones learn whose turn it is and the game phase by watching `rooms/{CODE}`, and their distance from `rooms/{CODE}/results`.
 
-- Generate `playerId` with `crypto.randomUUID()` and store it in `sessionStorage`, wrapped in try/catch.
+- Generate `playerId` with a random string (not `crypto.randomUUID()`, which is missing on plain-HTTP pages) and store it in `sessionStorage`, wrapped in try/catch.
 - On iOS, `DeviceOrientationEvent.requestPermission()` **must** be called from a user tap. Show an "Enable motion" button first.
 - Always provide a tap-only fallback in case tilt is unavailable.
 
@@ -106,20 +108,19 @@ Keep the physics as simple custom 2D velocity math on x and y. Three.js only dra
 
 ## Bricks
 
-Supabase table:
-```sql
-create table bricks (
-  id uuid primary key default gen_random_uuid(),
-  name text not null check (char_length(name) <= 40),
-  message text check (char_length(message) <= 80),
-  created_at timestamptz default now()
-);
-alter table bricks enable row level security;
-create policy "read all"   on bricks for select using (true);
-create policy "insert any" on bricks for insert with check (true);
+Firestore collection `bricks`, one document per brick: `{ name, message, createdAt }`.
+
+Security rules so anyone can read and add bricks, with length limits:
+```
+match /bricks/{id} {
+  allow read: if true;
+  allow create: if request.resource.data.name is string
+    && request.resource.data.name.size() <= 40
+    && (!('message' in request.resource.data) || request.resource.data.message.size() <= 80);
+}
 ```
 
-- `/bricks` renders a CSS grid of brick-shaped divs and subscribes to `postgres_changes` inserts so new bricks animate in live.
+- `/bricks` renders a CSS grid of brick-shaped divs and listens with `onSnapshot` so new bricks animate in live.
 - `/bricks/add` is a simple mobile form with client-side length limits and a basic profanity filter if time allows.
 - Seed about 30 bricks so the wall doesn't look empty during judging.
 
@@ -154,7 +155,7 @@ Work top-down. Commit after each step works.
 ## Rules for the agent
 
 - Don't add frameworks, state libraries, or a backend server beyond what's listed.
-- Keep secrets out of git. Only the anon key goes in the client.
+- Keep secrets out of git. Firebase web config values are public by design, so protect data with Firestore and Realtime Database security rules.
 - If something blocks you for more than about 20 minutes, choose the simpler path and leave a `TODO:` note.
 - Test the phone flow on a real device over the deployed URL. Motion sensors require HTTPS.
 - Before marking a step done, run `npm run build` and confirm it passes.
