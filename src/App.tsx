@@ -3,6 +3,7 @@ import LandingPage from './pages/LandingPage'
 import GamePage from './pages/GamePage'
 import Controller from './pages/ControllerPage'
 import MemorialPage from './pages/MemorialPage'
+import AddBrickPage from './pages/AddBrickPage'
 
 function App() {
   return (
@@ -13,6 +14,7 @@ function App() {
         <Route path="/play" element={<Controller />} />
         <Route path="/play/:room" element={<Controller />} />
         <Route path="/bricks" element={<MemorialPage />} />
+        <Route path="/bricks/add" element={<AddBrickPage />} />
       </Routes>
     </BrowserRouter>
   )
