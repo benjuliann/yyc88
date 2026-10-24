@@ -1,0 +1,377 @@
+{
+  "environment": "calgary-1988-sports-environment.glb",
+  "clips": [
+    {
+      "scene": "Jump_000m",
+      "distance_m": 0,
+      "file": "animations/Jump_000m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 227,
+      "landing_frame": 131
+    },
+    {
+      "scene": "Jump_005m",
+      "distance_m": 5,
+      "file": "animations/Jump_005m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 230,
+      "landing_frame": 134
+    },
+    {
+      "scene": "Jump_010m",
+      "distance_m": 10,
+      "file": "animations/Jump_010m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 232,
+      "landing_frame": 136
+    },
+    {
+      "scene": "Jump_015m",
+      "distance_m": 15,
+      "file": "animations/Jump_015m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 234,
+      "landing_frame": 138
+    },
+    {
+      "scene": "Jump_020m",
+      "distance_m": 20,
+      "file": "animations/Jump_020m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 237,
+      "landing_frame": 141
+    },
+    {
+      "scene": "Jump_025m",
+      "distance_m": 25,
+      "file": "animations/Jump_025m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 239,
+      "landing_frame": 143
+    },
+    {
+      "scene": "Jump_030m",
+      "distance_m": 30,
+      "file": "animations/Jump_030m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 242,
+      "landing_frame": 146
+    },
+    {
+      "scene": "Jump_035m",
+      "distance_m": 35,
+      "file": "animations/Jump_035m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 244,
+      "landing_frame": 148
+    },
+    {
+      "scene": "Jump_040m",
+      "distance_m": 40,
+      "file": "animations/Jump_040m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 246,
+      "landing_frame": 150
+    },
+    {
+      "scene": "Jump_045m",
+      "distance_m": 45,
+      "file": "animations/Jump_045m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 249,
+      "landing_frame": 153
+    },
+    {
+      "scene": "Jump_050m",
+      "distance_m": 50,
+      "file": "animations/Jump_050m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 251,
+      "landing_frame": 155
+    },
+    {
+      "scene": "Jump_055m",
+      "distance_m": 55,
+      "file": "animations/Jump_055m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 254,
+      "landing_frame": 158
+    },
+    {
+      "scene": "Jump_060m",
+      "distance_m": 60,
+      "file": "animations/Jump_060m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 256,
+      "landing_frame": 160
+    },
+    {
+      "scene": "Jump_065m",
+      "distance_m": 65,
+      "file": "animations/Jump_065m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 258,
+      "landing_frame": 162
+    },
+    {
+      "scene": "Jump_070m",
+      "distance_m": 70,
+      "file": "animations/Jump_070m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 261,
+      "landing_frame": 165
+    },
+    {
+      "scene": "Jump_075m",
+      "distance_m": 75,
+      "file": "animations/Jump_075m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 263,
+      "landing_frame": 167
+    },
+    {
+      "scene": "Jump_080m",
+      "distance_m": 80,
+      "file": "animations/Jump_080m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 266,
+      "landing_frame": 170
+    },
+    {
+      "scene": "Jump_085m",
+      "distance_m": 85,
+      "file": "animations/Jump_085m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 268,
+      "landing_frame": 172
+    },
+    {
+      "scene": "Jump_090m",
+      "distance_m": 90,
+      "file": "animations/Jump_090m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 270,
+      "landing_frame": 174
+    },
+    {
+      "scene": "Jump_095m",
+      "distance_m": 95,
+      "file": "animations/Jump_095m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 273,
+      "landing_frame": 177
+    },
+    {
+      "scene": "Jump_100m",
+      "distance_m": 100,
+      "file": "animations/Jump_100m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 275,
+      "landing_frame": 179
+    },
+    {
+      "scene": "Jump_105m",
+      "distance_m": 105,
+      "file": "animations/Jump_105m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 278,
+      "landing_frame": 182
+    },
+    {
+      "scene": "Jump_110m",
+      "distance_m": 110,
+      "file": "animations/Jump_110m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 280,
+      "landing_frame": 184
+    },
+    {
+      "scene": "Jump_115m",
+      "distance_m": 115,
+      "file": "animations/Jump_115m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 282,
+      "landing_frame": 186
+    },
+    {
+      "scene": "Jump_120m",
+      "distance_m": 120,
+      "file": "animations/Jump_120m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 285,
+      "landing_frame": 189
+    },
+    {
+      "scene": "Jump_125m",
+      "distance_m": 125,
+      "file": "animations/Jump_125m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 287,
+      "landing_frame": 191
+    },
+    {
+      "scene": "Jump_130m",
+      "distance_m": 130,
+      "file": "animations/Jump_130m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 290,
+      "landing_frame": 194
+    },
+    {
+      "scene": "Jump_135m",
+      "distance_m": 135,
+      "file": "animations/Jump_135m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 292,
+      "landing_frame": 196
+    },
+    {
+      "scene": "Jump_140m",
+      "distance_m": 140,
+      "file": "animations/Jump_140m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 294,
+      "landing_frame": 198
+    },
+    {
+      "scene": "Jump_145m",
+      "distance_m": 145,
+      "file": "animations/Jump_145m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 297,
+      "landing_frame": 201
+    },
+    {
+      "scene": "Jump_150m",
+      "distance_m": 150,
+      "file": "animations/Jump_150m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 299,
+      "landing_frame": 203
+    },
+    {
+      "scene": "Jump_155m",
+      "distance_m": 155,
+      "file": "animations/Jump_155m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 302,
+      "landing_frame": 206
+    },
+    {
+      "scene": "Jump_160m",
+      "distance_m": 160,
+      "file": "animations/Jump_160m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 304,
+      "landing_frame": 208
+    },
+    {
+      "scene": "Jump_165m",
+      "distance_m": 165,
+      "file": "animations/Jump_165m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 306,
+      "landing_frame": 210
+    },
+    {
+      "scene": "Jump_170m",
+      "distance_m": 170,
+      "file": "animations/Jump_170m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 309,
+      "landing_frame": 213
+    },
+    {
+      "scene": "Jump_175m",
+      "distance_m": 175,
+      "file": "animations/Jump_175m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 311,
+      "landing_frame": 215
+    },
+    {
+      "scene": "Jump_180m",
+      "distance_m": 180,
+      "file": "animations/Jump_180m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 314,
+      "landing_frame": 218
+    },
+    {
+      "scene": "Jump_185m",
+      "distance_m": 185,
+      "file": "animations/Jump_185m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 316,
+      "landing_frame": 220
+    },
+    {
+      "scene": "Jump_190m",
+      "distance_m": 190,
+      "file": "animations/Jump_190m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 318,
+      "landing_frame": 222
+    },
+    {
+      "scene": "Jump_195m",
+      "distance_m": 195,
+      "file": "animations/Jump_195m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 321,
+      "landing_frame": 225
+    },
+    {
+      "scene": "Jump_200m",
+      "distance_m": 200,
+      "file": "animations/Jump_200m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 323,
+      "landing_frame": 227
+    }
+  ],
+  "distance_convention": "Model ground centreline surface distance from takeoff ground projection, not official surveyed Olympic measurements.",
+  "camera_shake": "Baked into tracking-camera animation at 24 fps.",
+  "coordinate_system": "glTF right-handed, Y up, metres. Environment and clips share world coordinates."
+}
