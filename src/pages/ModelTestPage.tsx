@@ -3,6 +3,7 @@ import * as THREE from 'three'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import ScorePopup from '../components/ScorePopup'
+import { playScoreSound } from '../lib/scoreSounds'
 import { MODELS as BASE, DISTANCES, clipFile, fixBlenderLights, type Manifest } from '../lib/skiModels'
 
 
@@ -125,6 +126,7 @@ export default function ModelTestPage() {
         } else if (!landed && landAt !== undefined && t >= landAt) {
           landed = true
           setPopup({ distance: clipDistance, id: performance.now() })
+          playScoreSound(clipDistance)
         }
         lastTime = t
       }

@@ -8,6 +8,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 227,
+      "takeoff_frame": 112,
       "landing_frame": 131
     },
     {
@@ -17,6 +18,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 230,
+      "takeoff_frame": 112,
       "landing_frame": 134
     },
     {
@@ -26,6 +28,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 232,
+      "takeoff_frame": 112,
       "landing_frame": 136
     },
     {
@@ -35,6 +38,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 234,
+      "takeoff_frame": 112,
       "landing_frame": 138
     },
     {
@@ -44,6 +48,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 237,
+      "takeoff_frame": 112,
       "landing_frame": 141
     },
     {
@@ -53,6 +58,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 239,
+      "takeoff_frame": 112,
       "landing_frame": 143
     },
     {
@@ -62,6 +68,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 242,
+      "takeoff_frame": 112,
       "landing_frame": 146
     },
     {
@@ -71,6 +78,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 244,
+      "takeoff_frame": 112,
       "landing_frame": 148
     },
     {
@@ -80,6 +88,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 246,
+      "takeoff_frame": 112,
       "landing_frame": 150
     },
     {
@@ -89,6 +98,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 249,
+      "takeoff_frame": 112,
       "landing_frame": 153
     },
     {
@@ -98,6 +108,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 251,
+      "takeoff_frame": 112,
       "landing_frame": 155
     },
     {
@@ -107,6 +118,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 254,
+      "takeoff_frame": 112,
       "landing_frame": 158
     },
     {
@@ -116,6 +128,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 256,
+      "takeoff_frame": 112,
       "landing_frame": 160
     },
     {
@@ -125,6 +138,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 258,
+      "takeoff_frame": 112,
       "landing_frame": 162
     },
     {
@@ -134,6 +148,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 261,
+      "takeoff_frame": 112,
       "landing_frame": 165
     },
     {
@@ -143,6 +158,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 263,
+      "takeoff_frame": 112,
       "landing_frame": 167
     },
     {
@@ -152,6 +168,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 266,
+      "takeoff_frame": 112,
       "landing_frame": 170
     },
     {
@@ -161,6 +178,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 268,
+      "takeoff_frame": 112,
       "landing_frame": 172
     },
     {
@@ -170,6 +188,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 270,
+      "takeoff_frame": 112,
       "landing_frame": 174
     },
     {
@@ -179,6 +198,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 273,
+      "takeoff_frame": 112,
       "landing_frame": 177
     },
     {
@@ -188,6 +208,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 275,
+      "takeoff_frame": 112,
       "landing_frame": 179
     },
     {
@@ -197,6 +218,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 278,
+      "takeoff_frame": 112,
       "landing_frame": 182
     },
     {
@@ -206,6 +228,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 280,
+      "takeoff_frame": 112,
       "landing_frame": 184
     },
     {
@@ -215,6 +238,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 282,
+      "takeoff_frame": 112,
       "landing_frame": 186
     },
     {
@@ -224,6 +248,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 285,
+      "takeoff_frame": 112,
       "landing_frame": 189
     },
     {
@@ -233,6 +258,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 287,
+      "takeoff_frame": 112,
       "landing_frame": 191
     },
     {
@@ -242,6 +268,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 290,
+      "takeoff_frame": 112,
       "landing_frame": 194
     },
     {
@@ -251,6 +278,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 292,
+      "takeoff_frame": 112,
       "landing_frame": 196
     },
     {
@@ -260,6 +288,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 294,
+      "takeoff_frame": 112,
       "landing_frame": 198
     },
     {
@@ -269,6 +298,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 297,
+      "takeoff_frame": 112,
       "landing_frame": 201
     },
     {
@@ -278,6 +308,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 299,
+      "takeoff_frame": 112,
       "landing_frame": 203
     },
     {
@@ -287,6 +318,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 302,
+      "takeoff_frame": 112,
       "landing_frame": 206
     },
     {
@@ -296,6 +328,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 304,
+      "takeoff_frame": 112,
       "landing_frame": 208
     },
     {
@@ -305,6 +338,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 306,
+      "takeoff_frame": 112,
       "landing_frame": 210
     },
     {
@@ -314,6 +348,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 309,
+      "takeoff_frame": 112,
       "landing_frame": 213
     },
     {
@@ -323,6 +358,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 311,
+      "takeoff_frame": 112,
       "landing_frame": 215
     },
     {
@@ -332,6 +368,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 314,
+      "takeoff_frame": 112,
       "landing_frame": 218
     },
     {
@@ -341,6 +378,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 316,
+      "takeoff_frame": 112,
       "landing_frame": 220
     },
     {
@@ -350,6 +388,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 318,
+      "takeoff_frame": 112,
       "landing_frame": 222
     },
     {
@@ -359,6 +398,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 321,
+      "takeoff_frame": 112,
       "landing_frame": 225
     },
     {
@@ -368,10 +408,56 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 323,
+      "takeoff_frame": 112,
       "landing_frame": 227
     }
   ],
   "distance_convention": "Model ground centreline surface distance from takeoff ground projection, not official surveyed Olympic measurements.",
   "camera_shake": "Baked into tracking-camera animation at 24 fps.",
-  "coordinate_system": "glTF right-handed, Y up, metres. Environment and clips share world coordinates."
+  "coordinate_system": "glTF right-handed, Y up, metres. Environment and clips share world coordinates.",
+  "steer_node_suffix": "| steer",
+  "lateral_axis": [
+    -1,
+    0,
+    0
+  ],
+  "inrun_half_width_m": 3.8,
+  "landing_half_width_m": 8.15,
+  "centre_line_x": 45.0,
+  "steering_notes": "lateral_axis is glTF world -X (skier faces +Z, so their right is -X); the steer node is a child of the trajectory root, so its local X should be driven with the same sign. Half widths are measured from the jump centre line (x = 45) to the edge of the skiable snow surface: inrun snow 3.8 m (concrete side walls and handrails at 4.3 m); landing is the narrowest point at the knoll, widening downhill per landing_half_width_profile_m. The skier itself is ~0.43 m half-wide.",
+  "landing_half_width_profile_m": [
+    [
+      -65,
+      8.15
+    ],
+    [
+      -45,
+      9.6
+    ],
+    [
+      -25,
+      11.05
+    ],
+    [
+      -5,
+      12.5
+    ],
+    [
+      15,
+      14.0
+    ],
+    [
+      35,
+      15.45
+    ],
+    [
+      55,
+      16.9
+    ],
+    [
+      75,
+      17.5
+    ]
+  ],
+  "landing_half_width_profile_axes": "[glTF world Z, half width m]; interpolate linearly, clamp outside the range."
 }

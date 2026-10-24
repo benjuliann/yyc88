@@ -3,9 +3,10 @@ import * as THREE from 'three'
 import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js'
 import ScorePopup from '../components/ScorePopup'
 import { MODELS, DISTANCES, clipFile, fixBlenderLights, type Manifest } from '../lib/skiModels'
+import { playScoreSound, playWipeoutSound } from '../lib/scoreSounds'
 import '../styles/ski-jump.css'
 
-// All 41 clips are identical up to the TAKEOFF marker (frame 112 in every Blender scene),
+// All 41 clips are identical up to takeoff (takeoff_frame 112 in every clip of the manifest),
 // so the in-run plays from any clip and we swap to the earned distance at takeoff.
 const FPS = 24
 const TAKEOFF_T = 112 / FPS
@@ -22,32 +23,21 @@ const DAMPING = 0.97
 // Timing: pressing this many seconds early (or not at all) scores zero.
 const TIMING_WINDOW = 0.75
 
-// Steering look: how far the skier slides off the centre line (m), how fast they steer
-// after takeoff (m/s), and how far they lean into a turn (radians).
-const MAX_SLIDE = 1.5
-const AIR_STEER = 2.5
+// The takeoff rating plays the earned distance's landing sound, pitched down by this playback rate.
+const TAKEOFF_SOUND_RATE = 0.8
+
+// Steering look: how fast they steer after takeoff (m/s), how far they lean into a turn
+// (radians), and how much of the sideways movement the camera follows (0 = none, 1 = all).
+const AIR_STEER = 4
 const LEAN = 0.3
+const CAM_FOLLOW = 0.6
+// The manifest's half widths are for the skier's centre; this keeps the skis inside the edge.
+const SKIER_HALF_WIDTH = 0.43
 
 // Wipeout: hitting the side on the ground freezes the pose and tumbles the skier down the
 // slope (spin in rad/s, both decaying), then resets to the start gate.
 const TUMBLE_TIME = 2.5
 const TUMBLE_SPIN = 10
-
-// Wraps the clip's skier in a group we can slide and lean without fighting the baked animation
-// (the mixer rewrites the skier's own transform every frame).
-function rigSkier(root: THREE.Object3D) {
-  if (!root.userData.rig) {
-    let skier: THREE.Object3D | undefined
-    root.traverse((o) => {
-      if (!skier && o.name.includes('trajectory')) skier = o
-    })
-    const rig = new THREE.Group()
-    root.add(rig)
-    rig.add(skier!)
-    root.userData.rig = { rig, skier: skier! }
-  }
-  return root.userData.rig as { rig: THREE.Group; skier: THREE.Object3D }
-}
 
 type Phase = 'loading' | 'ready' | 'inrun' | 'flight' | 'done' | 'crash'
 type Takeoff = { label: string; balance: number; timing: number }
@@ -59,6 +49,19 @@ function rateTakeoff(balance: number, pressT: number | null): Takeoff & { distan
   const raw = 200 * balance * timing
   const distance = Math.min(200, Math.max(0, Math.round(raw / 5) * 5))
   return { label, balance, timing, distance }
+}
+
+// Half width of the landing hill at world Z, from the manifest profile.
+function landingHalfWidth(profile: [number, number][], z: number) {
+  if (z <= profile[0][0]) return profile[0][1]
+  for (let i = 1; i < profile.length; i++) {
+    const [z1, w1] = profile[i]
+    if (z <= z1) {
+      const [z0, w0] = profile[i - 1]
+      return THREE.MathUtils.lerp(w0, w1, (z - z0) / (z1 - z0))
+    }
+  }
+  return profile[profile.length - 1][1]
 }
 
 export default function SkiJumpPage() {
@@ -93,10 +96,14 @@ export default function SkiJumpPage() {
     }
 
     const landingTimes = new Map<number, number>()
+    let inrunLimit = 0
+    let landingProfile: [number, number][] = []
     const manifest = fetch(`${MODELS}/manifest.json`)
       .then((r) => r.json())
       .then((m: Manifest) => {
         for (const c of m.clips) landingTimes.set(c.distance_m, c.landing_frame / c.fps)
+        inrunLimit = m.inrun_half_width_m - SKIER_HALF_WIDTH
+        landingProfile = m.landing_half_width_profile_m
       })
 
     Promise.all([loader.loadAsync(`${MODELS}/calgary-1988-sports-environment.glb`), getClip(INRUN_CLIP), manifest]).then(
@@ -111,19 +118,32 @@ export default function SkiJumpPage() {
     )
 
     // --- current clip ---
+    // `steer` (from Blender) sits between the animated trajectory root and the body and is never
+    // animated, so we can slide (local X = world X), lean and tumble the skier through it.
     let root: THREE.Object3D | null = null
     let mixer: THREE.AnimationMixer | null = null
     let action: THREE.AnimationAction | null = null
     let cam: THREE.PerspectiveCamera | null = null
-    let rig: ReturnType<typeof rigSkier> | null = null
+    let steer: THREE.Object3D | null = null
+    // What we added to the baked camera last frame. The mixer only rewrites values that changed,
+    // so while the clip is paused (crash, finished) it won't reset the camera for us.
+    const camOffset = new THREE.Vector3()
 
     const play = (gltf: GLTF, startTime: number) => {
+      cam?.position.sub(camOffset)
+      camOffset.set(0, 0, 0)
       if (root) scene.remove(root)
       mixer?.stopAllAction()
       root = gltf.scene
       scene.add(root)
       cam = (gltf.cameras[0] as THREE.PerspectiveCamera) ?? null
-      rig = rigSkier(root)
+      steer = null
+      root.traverse((o) => {
+        if (!steer && o.name.endsWith('steer')) steer = o
+      })
+      // Clips are cached and replayed, so clear what a previous run left on the steer node.
+      steer!.position.set(0, 0, 0)
+      steer!.quaternion.identity()
       mixer = new THREE.AnimationMixer(root)
       action = mixer.clipAction(gltf.animations[0])
       action.setLoop(THREE.LoopOnce, 1)
@@ -156,7 +176,7 @@ export default function SkiJumpPage() {
       pressT: null as number | null,
       distance: 0,
       landed: false,
-      slide: 0,
+      slide: 0, // metres from the centre line, + = screen right
       lean: 0,
       crashed: false,
       crashTime: 0,
@@ -179,6 +199,7 @@ export default function SkiJumpPage() {
       game.distance = result.distance
       game.phase = 'flight'
       setTakeoff(result)
+      playScoreSound(result.distance, TAKEOFF_SOUND_RATE)
       setPhase('flight')
       const t = action!.time
       action!.paused = true // holds on the lip only if the clip isn't fetched yet
@@ -203,49 +224,55 @@ export default function SkiJumpPage() {
     const onResize = () => renderer.setSize(mount.clientWidth, mount.clientHeight)
     window.addEventListener('resize', onResize)
 
-    // Wipeout state: frozen pose/camera, tumble displacement, velocity and spin.
+    const UP = new THREE.Vector3(0, 1, 0)
+    const HIP = new THREE.Vector3(0, 0.9, 0) // tumble pivot, in steer space
+    const runAxis = new THREE.Vector3(0, 0, 1) // the jump runs along world Z
+    const camRight = new THREE.Vector3()
+    let screenSign = 1 // world X sign that is "right" on screen for the current camera
+
+    // Wipeout state: velocity before the crash, tumble displacement (world) and spin (steer space).
     const prevPos = new THREE.Vector3()
     const velocity = new THREE.Vector3()
-    const crashSkier = new THREE.Vector3()
-    const crashCam = new THREE.Vector3()
     const crashVel = new THREE.Vector3()
     const crashDisp = new THREE.Vector3()
+    const crashSlide = new THREE.Vector3()
+    const rootInv = new THREE.Quaternion()
     const spinAxis = new THREE.Vector3()
     const spinQ = new THREE.Quaternion()
     const crashQ = new THREE.Quaternion()
-    const pivot = new THREE.Vector3()
-    const UP = new THREE.Vector3(0, 1, 0)
+    const localDisp = new THREE.Vector3()
 
     const wipeout = () => {
       game.phase = 'crash'
       game.crashed = true
       game.crashTime = 0
       action!.paused = true
-      crashSkier.copy(rig!.skier.position)
-      crashCam.copy(cam!.position)
-      // Keep the speed we had, plus a shove off the side we hit.
-      crashVel.copy(velocity).addScaledVector(lateral, Math.sign(game.slide) * 3)
+      root!.updateMatrixWorld()
+      steer!.parent!.getWorldQuaternion(rootInv).invert()
+      crashSlide.copy(steer!.position)
+      // Keep the speed we had, and bounce back off the side we hit (toward the middle).
+      crashVel.copy(velocity)
+      crashVel.x -= Math.sign(game.slide) * screenSign * 3
       crashDisp.set(0, 0, 0)
       crashQ.identity()
       // Forward roll around the sideways axis, plus some cartwheel around the travel direction.
       const travel = crashVel.lengthSq() > 1e-3 ? crashVel.clone().normalize() : runAxis.clone()
       spinAxis.crossVectors(travel, UP).normalize().addScaledVector(travel, 0.6 * Math.sign(game.slide)).normalize()
+      spinAxis.applyQuaternion(rootInv)
       setPopup(null)
       setTakeoff(null)
       setCrashed(true)
       setPhase('crash')
+      playWipeoutSound()
     }
-
-    const lateral = new THREE.Vector3()
-    const runAxis = new THREE.Vector3(0, 0, 1) // the jump runs along world Z
-    const leanQ = new THREE.Quaternion()
-    const camRight = new THREE.Vector3()
 
     renderer.setAnimationLoop((time) => {
       timer.update(time)
       const dt = Math.min(timer.getDelta(), 0.1)
+      cam?.position.sub(camOffset)
       mixer?.update(dt)
       const push = (game.right ? 1 : 0) - (game.left ? 1 : 0)
+      const pos = steer?.parent?.position // trajectory root, world space (top-level node)
 
       if (game.phase === 'inrun' && action) {
         game.velocity += (game.balance * DRIFT + (Math.random() - 0.5) * GUST + push * PUSH) * dt
@@ -257,14 +284,16 @@ export default function SkiJumpPage() {
         game.balanceTime += dt
         if (needleRef.current) needleRef.current.style.left = `${50 + game.balance * 50}%`
         if (lipFillRef.current) lipFillRef.current.style.width = `${Math.min(action.time / TAKEOFF_T, 1) * 100}%`
-        game.slide = game.balance * MAX_SLIDE
+        game.slide = game.balance * inrunLimit
         if (hitSide) wipeout()
         else if (action.time >= TAKEOFF_T) takeOff()
-      } else if (game.phase === 'flight' || game.phase === 'done') {
-        game.slide = THREE.MathUtils.clamp(game.slide + push * AIR_STEER * dt, -MAX_SLIDE, MAX_SLIDE)
-        // On the ground (after landing) the edge of the hill is a wipeout too; in the air it just stops you.
+      } else if ((game.phase === 'flight' || game.phase === 'done') && pos) {
+        const limit = landingHalfWidth(landingProfile, pos.z) - SKIER_HALF_WIDTH
+        game.slide += push * AIR_STEER * dt
+        // On the ground (after landing) the edge of the hill is a wipeout; in the air it just stops you.
         const onGround = game.phase === 'done' || game.landed
-        if (onGround && Math.abs(game.slide) >= MAX_SLIDE) wipeout()
+        if (onGround && Math.abs(game.slide) >= limit) wipeout()
+        else game.slide = THREE.MathUtils.clamp(game.slide, -limit, limit)
       }
 
       if (game.phase === 'crash') {
@@ -276,26 +305,25 @@ export default function SkiJumpPage() {
         if (game.crashTime >= TUMBLE_TIME) getClip(INRUN_CLIP).then((g) => !disposed && toGate(g))
       }
 
-      if (rig && game.crashed && cam) {
-        // Tumble around the body's middle, carried down the slope; camera trails along.
-        pivot.copy(crashSkier).addScaledVector(UP, 0.9)
-        rig.rig.quaternion.copy(crashQ)
-        rig.rig.position.copy(pivot).applyQuaternion(crashQ).negate().add(pivot)
-          .addScaledVector(lateral, game.slide).add(crashDisp)
-        cam.position.copy(crashCam).addScaledVector(crashDisp, 0.85)
-      } else if (rig && cam) {
-        // Track speed for a wipeout.
-        if (dt > 0) velocity.copy(rig.skier.position).sub(prevPos).divideScalar(dt)
-        prevPos.copy(rig.skier.position)
-        // Slide across the run and lean into the turn, pivoting around the skier.
-        game.lean = THREE.MathUtils.damp(game.lean, push * LEAN, 8, dt)
-        // Pick the side of the run that is "right" on screen for the current camera.
-        camRight.setFromMatrixColumn(cam.matrixWorld, 0)
-        lateral.set(Math.sign(camRight.x) || 1, 0, 0)
-        leanQ.setFromAxisAngle(runAxis, -game.lean * lateral.x)
-        const p = rig.skier.position
-        rig.rig.quaternion.copy(leanQ)
-        rig.rig.position.copy(p).applyQuaternion(leanQ).negate().add(p).addScaledVector(lateral, game.slide)
+      if (steer && cam && pos) {
+        if (game.crashed) {
+          // Tumble around the hips, carried down the slope (pose and root are frozen).
+          localDisp.copy(crashDisp).applyQuaternion(rootInv)
+          steer.quaternion.copy(crashQ)
+          steer.position.copy(HIP).applyQuaternion(crashQ).negate().add(HIP).add(crashSlide).add(localDisp)
+        } else {
+          if (dt > 0) velocity.copy(pos).sub(prevPos).divideScalar(dt)
+          prevPos.copy(pos)
+          camRight.setFromMatrixColumn(cam.matrixWorld, 0)
+          screenSign = Math.sign(camRight.x) || 1
+          game.lean = THREE.MathUtils.damp(game.lean, push * LEAN, 8, dt)
+          steer.position.set(game.slide * screenSign, 0, 0)
+          steer.rotation.set(0, 0, -game.lean * screenSign)
+        }
+        // The baked camera isn't parented to steer: trail the sideways movement (and the tumble).
+        camOffset.set((game.crashed ? crashSlide.x : steer.position.x) * CAM_FOLLOW, 0, 0)
+        if (game.crashed) camOffset.addScaledVector(crashDisp, 0.85)
+        cam.position.add(camOffset)
       }
 
       if (game.phase === 'flight' && action && !game.landed) {
@@ -303,6 +331,7 @@ export default function SkiJumpPage() {
         if (landAt !== undefined && action.time >= landAt) {
           game.landed = true
           setPopup({ distance: game.distance, id: performance.now() })
+          playScoreSound(game.distance)
         }
       }
 
