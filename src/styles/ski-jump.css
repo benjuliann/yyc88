@@ -1,0 +1,122 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+.ski-jump {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  font-family: 'Press Start 2P', monospace;
+  color: #fff;
+  user-select: none;
+}
+
+.ski-jump__canvas {
+  width: 100%;
+  height: 100%;
+}
+
+.ski-jump__banner {
+  position: absolute;
+  top: 45%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  font-size: clamp(14px, 2.6vw, 26px);
+  text-shadow: 3px 3px 0 #1b1464;
+  white-space: nowrap;
+}
+
+.ski-jump__banner--bottom {
+  top: auto;
+  bottom: 8%;
+  transform: translateX(-50%);
+}
+
+.ski-jump__blink {
+  color: #ffe600;
+  animation: ski-jump-blink 1s steps(2) infinite;
+}
+
+.ski-jump__help {
+  margin-top: 14px;
+  font-size: clamp(8px, 1.2vw, 12px);
+  letter-spacing: 1px;
+  text-shadow: 2px 2px 0 #1b1464;
+}
+
+/* In-run HUD: balance meter + take-off bar */
+.ski-jump__hud {
+  position: absolute;
+  bottom: 6%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(420px, 86vw);
+  padding: 14px 16px;
+  background: rgba(27, 20, 100, 0.75);
+  border: 4px solid #fff;
+  box-shadow: 6px 6px 0 #e4002b;
+}
+
+.ski-jump__meter-label {
+  font-size: 10px;
+  margin: 0 0 8px;
+}
+
+.ski-jump__meter,
+.ski-jump__lip {
+  position: relative;
+  height: 20px;
+  margin-bottom: 14px;
+  background: #0b0838;
+  border: 3px solid #fff;
+}
+
+.ski-jump__lip {
+  margin-bottom: 0;
+}
+
+.ski-jump__meter-zone {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 40%;
+  width: 20%;
+  background: #1fa34a;
+}
+
+.ski-jump__needle {
+  position: absolute;
+  top: -6px;
+  bottom: -6px;
+  left: 50%;
+  width: 6px;
+  margin-left: -3px;
+  background: #ffe600;
+  box-shadow: 0 0 0 2px #1b1464;
+}
+
+.ski-jump__lip-fill {
+  height: 100%;
+  width: 0;
+  background: repeating-linear-gradient(90deg, #ffe600 0 8px, #ffb800 8px 16px);
+}
+
+/* Takeoff rating shown during flight */
+.ski-jump__takeoff {
+  position: absolute;
+  top: 16%;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  white-space: nowrap;
+  animation: score-slam 0.35s cubic-bezier(0.2, 1.6, 0.4, 1) both;
+}
+
+.ski-jump__takeoff-label {
+  font-size: clamp(22px, 5vw, 56px);
+  color: #ffe600;
+  text-shadow: -3px 0 0 #1b1464, 3px 0 0 #1b1464, 0 -3px 0 #1b1464, 0 3px 0 #1b1464, 6px 6px 0 #e4002b;
+}
+
+@keyframes ski-jump-blink {
+  50% { opacity: 0; }
+}
