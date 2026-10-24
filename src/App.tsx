@@ -1,8 +1,9 @@
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
-import LandingPage from './pages/LandingPage'
-import GamePage from './pages/GamePage'
-import Controller from './pages/ControllerPage'
-import MemorialPage from './pages/MemorialPage'
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+import LandingPage from "./pages/LandingPage";
+import GamePage from "./pages/GamePage";
+import Controller from "./pages/ControllerPage";
+import MemorialPage from "./pages/MemorialPage";
+import Menu from "./pages/Menu";
 
 function App() {
   return (
@@ -15,7 +16,7 @@ function App() {
         <Route path="/bricks" element={<MemorialPage />} />
       </Routes>
     </BrowserRouter>
-  )
+  );
 }
 
-export default App
+export default App;
