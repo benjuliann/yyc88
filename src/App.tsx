@@ -21,7 +21,7 @@ function App() {
         <Route path="/controller-test/:room" element={<ControllerTestPage />} />
       </Routes>
     </BrowserRouter>
-  )
+  );
 }
 
-export default App
+export default App;

@@ -1,13 +1,16 @@
 import {
   collection,
+  deleteDoc,
   doc,
   getDoc,
+  getDocs,
   onSnapshot,
   orderBy,
   query,
   serverTimestamp,
   setDoc,
   updateDoc,
+  writeBatch,
 } from 'firebase/firestore'
 import { db } from './firebase'
 
@@ -40,8 +43,22 @@ export function startRace(code: string) {
   return updateDoc(doc(db, 'rooms', code), { phase: 'playing' })
 }
 
+// Call once a race is finished. Firestore doesn't delete a document's subcollections
+// along with it, so the players are deleted first, all in one batch.
+export async function deleteRoom(code: string) {
+  const batch = writeBatch(db)
+  const players = await getDocs(collection(db, 'rooms', code, 'players'))
+  players.forEach((player) => batch.delete(player.ref))
+  batch.delete(doc(db, 'rooms', code))
+  await batch.commit()
+}
+
 export function joinRoom(code: string, playerId: string, name: string) {
   return setDoc(doc(db, 'rooms', code, 'players', playerId), { name, joinedAt: serverTimestamp() })
+}
+
+export function leaveRoom(code: string, playerId: string) {
+  return deleteDoc(doc(db, 'rooms', code, 'players', playerId))
 }
 
 // Calls back with null when the room doesn't exist.

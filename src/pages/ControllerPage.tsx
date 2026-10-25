@@ -43,6 +43,7 @@ function EnterCode() {
 }
 
 function JoinRoom({ room }: { room: string }) {
+  const navigate = useNavigate()
   const [phase, setPhase] = useState<Phase | null | undefined>(undefined)
   const [name, setName] = useState('')
   const [joined, setJoined] = useState(false)
@@ -58,6 +59,16 @@ function JoinRoom({ room }: { room: string }) {
     } catch (err) {
       console.error(err)
       setError("Couldn't join. Try again.")
+    }
+  }
+
+  const leave = async () => {
+    try {
+      await leaveRoom(room, getPlayerId())
+      navigate('/play')
+    } catch (err) {
+      console.error(err)
+      setError("Couldn't leave. Try again.")
     }
   }
 
@@ -82,6 +93,10 @@ function JoinRoom({ room }: { room: string }) {
         <RotatePhone to="portrait" />
         <Logo />
         <p className="controller__message">You're in, {name.trim()}! Look at the big screen.</p>
+        {error && <p className="controller__error">{error}</p>}
+        <button type="button" className="join-race join-race--outline" onClick={leave}>
+          Leave room
+        </button>
       </div>
     )
   }

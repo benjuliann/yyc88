@@ -150,6 +150,7 @@
 .lobby__actions {
   display: flex;
   justify-content: center;
+  gap: 16px;
   margin-top: auto;
   padding-top: 40px;
 }

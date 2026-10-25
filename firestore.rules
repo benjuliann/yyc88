@@ -1,0 +1,53 @@
+rules_version = '2';
+
+// There's no sign-in, so anyone can read and play. These rules only make sure
+// every write has the right shape, so nobody can fill the database with junk.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Game rooms: rooms/{CODE} with { phase, createdAt }.
+    match /rooms/{code} {
+      allow read: if true;
+
+      allow create: if code.matches('^[A-HJ-NP-Z]{4}$')
+        && request.resource.data.keys().hasOnly(['phase', 'createdAt'])
+        && request.resource.data.phase == 'lobby'
+        && request.resource.data.createdAt == request.time;
+
+      // The only change allowed is the host starting the race.
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['phase'])
+        && resource.data.phase == 'lobby'
+        && request.resource.data.phase == 'playing';
+
+      // deleteRoom() removes finished rooms.
+      allow delete: if true;
+
+      // Players in a room: rooms/{CODE}/players/{playerId} with { name, joinedAt }.
+      match /players/{playerId} {
+        allow read: if true;
+
+        // Updates are allowed so a player who refreshes can rejoin under the same id.
+        allow create, update: if exists(/databases/$(database)/documents/rooms/$(code))
+          && request.resource.data.keys().hasOnly(['name', 'joinedAt'])
+          && request.resource.data.name is string
+          && request.resource.data.name.size() > 0
+          && request.resource.data.name.size() <= 20
+          && request.resource.data.joinedAt == request.time;
+
+        allow delete: if true;
+      }
+    }
+
+    // Memorial bricks: bricks/{id} with { name, createdAt }, one per racer, laid when a race ends.
+    // Nobody can edit or delete them from the app.
+    match /bricks/{brickId} {
+      allow read: if true;
+
+      allow create: if request.resource.data.keys().hasOnly(['name', 'createdAt'])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 20
+        && request.resource.data.createdAt == request.time;
+    }
+  }
+}
