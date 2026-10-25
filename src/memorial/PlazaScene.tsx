@@ -4,6 +4,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { fixBlenderLights } from '../lib/skiModels'
 import { createSnowOverlay } from '../lib/snowOverlay'
 import type { Brick } from './bricks'
+import { createSkyline } from './skyline'
 
 const MODEL = '/models/plaza/olympic-plaza-historical.glb'
 // Crouched on the east brick walkway with a phone near the ground, looking across the pavers to the arcade.
@@ -111,8 +112,10 @@ export default function PlazaScene({ bricks, laying = 0, onLaid }: { bricks: Bri
     scene.background = twilight()
     scene.fog = new THREE.Fog(HORIZON, 30, 160)
     scene.add(new THREE.HemisphereLight(0x5a6c9c, 0x1a1a22, 0.6))
+    scene.add(createSkyline())
 
-    const camera = new THREE.PerspectiveCamera(50, mount.clientWidth / mount.clientHeight, 0.05, 1000)
+    // Far enough to reach the westernmost downtown towers, about 1.5 km off.
+    const camera = new THREE.PerspectiveCamera(50, mount.clientWidth / mount.clientHeight, 0.05, 2500)
     camera.position.copy(EYE)
     camera.lookAt(LOOK_AT)
     // Which pavers get names is always decided from the plaza view, even while the ceremony camera is elsewhere.
@@ -176,6 +179,7 @@ export default function PlazaScene({ bricks, laying = 0, onLaid }: { bricks: Bri
       const plinths: THREE.Mesh[] = []
       const trees: THREE.Object3D[] = []
       const litWindow = new THREE.MeshBasicMaterial({ color: 0xd9b57a })
+      const snowCover = new THREE.MeshStandardMaterial({ color: 0xe6ecf7, roughness: 0.9 })
       gltf.scene.traverse((o) => {
         // The Blender sun becomes moonlight.
         if (o instanceof THREE.DirectionalLight) {
@@ -193,6 +197,8 @@ export default function PlazaScene({ bricks, laying = 0, onLaid }: { bricks: Bri
         // The first lamp post's pieces, to copy for the extra lamps.
         if (/^Plaza_light_(pole|cap|diffuser)$/.test(o.name)) lampParts.push(o)
         if (o.name.startsWith('Arcade_•_column_plinth')) plinths.push(o)
+        // Snow lies on the lawns; the brick walkways are kept clear so the names read.
+        if (o.name.startsWith('Archive-traced_lawn_bed') && !o.name.includes('exclusion')) o.material = snowCover
         // Lights on in about a third of the office windows.
         if (o.name.includes('window') && Math.random() < 0.35) o.material = litWindow
       })
@@ -368,8 +374,27 @@ export default function PlazaScene({ bricks, laying = 0, onLaid }: { bricks: Bri
     }
     window.addEventListener('resize', onResize)
 
+    // Park ambience on a loop. Browsers block audio until the user interacts, so if autoplay is
+    // refused, start it on the first click or key press.
+    const park = new Audio('/sounds/park.mp3')
+    park.loop = true
+    park.volume = 0.1
+    const startPark = () => {
+      park.play().catch(() => {})
+      window.removeEventListener('pointerdown', startPark)
+      window.removeEventListener('keydown', startPark)
+    }
+    park.play().catch(() => {
+      if (disposed) return // left the plaza while play() was pending
+      window.addEventListener('pointerdown', startPark)
+      window.addEventListener('keydown', startPark)
+    })
+
     return () => {
       disposed = true
+      park.pause()
+      window.removeEventListener('pointerdown', startPark)
+      window.removeEventListener('keydown', startPark)
       renderer.setAnimationLoop(null)
       cancelAnimationFrame(frame)
       for (const { plate } of laid) (plate.material as THREE.Material).dispose()
