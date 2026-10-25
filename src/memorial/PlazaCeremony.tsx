@@ -1,28 +1,29 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'motion/react'
 import Logo from '../components/Logo'
 import JoinRaceButton from '../components/JoinRaceButton'
-import BrickList from './BrickList'
+import PlazaScene from './PlazaScene'
 import { watchBricks, type Brick } from './bricks'
 import '../styles/memorial.css'
 
-const PAN_SECONDS = 2.5
-const SECONDS_BETWEEN_BRICKS = 0.6
-
-// After a race: the view pans down from the skyline onto the plaza,
-// then each racer's brick is laid into the floor one by one.
+// After a race: close over the plaza pavement, each racer's name is set into a paver one by one,
+// then the view slowly pulls back out to the Memorial Plaza, just as /bricks shows it.
 export default function PlazaCeremony({ laid, onFinish }: { laid: Brick[]; onFinish: () => void }) {
   const [bricks, setBricks] = useState<Brick[]>([])
+  const [done, setDone] = useState(false)
 
   useEffect(() => watchBricks(setBricks), [])
 
-  // The new bricks are already saved, so keep them out of the background.
-  const laidIds = new Set(laid.map((brick) => brick.id))
-  const older = bricks.filter((brick) => !laidIds.has(brick.id))
-  const doneAt = PAN_SECONDS + laid.length * SECONDS_BETWEEN_BRICKS + 1
+  // The new names first, so they take the pavers nearest the viewer; the older ones fill in behind.
+  const names = useMemo(() => {
+    const laidIds = new Set(laid.map((brick) => brick.id))
+    return [...laid, ...bricks.filter((brick) => !laidIds.has(brick.id))]
+  }, [laid, bricks])
 
   return (
     <main className="memorial">
+      <PlazaScene bricks={names} laying={laid.length} onLaid={() => setDone(true)} />
+
       <header className="memorial__header">
         <Logo />
       </header>
@@ -30,30 +31,18 @@ export default function PlazaCeremony({ laid, onFinish }: { laid: Brick[]; onFin
       <motion.div
         className="memorial__intro"
         initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: PAN_SECONDS, duration: 0.8 }}
+        animate={done ? { opacity: 1, y: 0 } : undefined}
+        transition={{ duration: 0.8 }}
       >
-        <h1 className="memorial__title">Laid in the plaza</h1>
-        <p className="memorial__subtitle">Every racer's name, set into the Memorial Plaza.</p>
+        <h1 className="memorial__title">The Memorial Plaza</h1>
+        <p className="memorial__subtitle">Every racer leaves their name in the plaza.</p>
       </motion.div>
 
-      <motion.div
-        className="memorial__floor"
-        initial={{ y: '75%' }}
-        animate={{ y: 0 }}
-        transition={{ duration: PAN_SECONDS, ease: 'easeInOut' }}
-      >
-        <BrickList bricks={older} laid={laid} delay={PAN_SECONDS} stagger={SECONDS_BETWEEN_BRICKS} />
-      </motion.div>
-
-      <motion.div
-        className="memorial__finish"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: doneAt }}
-      >
-        <JoinRaceButton label="Finish" onClick={onFinish} />
-      </motion.div>
+      {done && (
+        <motion.div className="memorial__finish" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1 }}>
+          <JoinRaceButton label="Finish" onClick={onFinish} />
+        </motion.div>
+      )}
     </main>
   )
 }

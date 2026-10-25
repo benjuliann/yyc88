@@ -26,6 +26,9 @@ const LIT_LAMP_DISTANCE = 60 // lamps further away only glow, which keeps the li
 const CANOPY_CENTRE = new THREE.Vector3(0, 5, 0)
 const CANOPY = new THREE.Vector3(2, 2.1, 2)
 const BULBS_PER_TREE = 70
+// Race-end ceremony (seconds): a beat on the empty pavers, one name every STAGGER, each dropping in over
+// DROP, a beat on the finished row, then a slow pull back out to the plaza view.
+const CEREMONY = { HOLD: 1, STAGGER: 0.9, DROP: 0.5, LINGER: 1.2, PAN_OUT: 6 }
 
 // The page's night blue overhead, brightening to the horizon glow, so trees and buildings stand out against it.
 function twilight() {
@@ -87,10 +90,14 @@ function engraving(name: string, anisotropy: number) {
 }
 
 // The /bricks plaza: the historical Olympic Plaza model, with racers' names carved into the nearest pavers.
-export default function PlazaScene({ bricks }: { bricks: Brick[] }) {
+// After a race, `laying` is how many of `bricks` (from the front) were just laid: the camera starts close
+// over those pavers, sets each name into the pavement, then pulls back to the plaza view and calls `onLaid`.
+export default function PlazaScene({ bricks, laying = 0, onLaid }: { bricks: Brick[]; laying?: number; onLaid?: () => void }) {
   const mountRef = useRef<HTMLDivElement>(null)
   const bricksRef = useRef(bricks)
   const engraveRef = useRef(() => {})
+  // Read once: the ceremony is set up when the scene mounts.
+  const ceremonyRef = useRef({ laying, onLaid })
 
   useEffect(() => {
     const mount = mountRef.current!
@@ -108,6 +115,8 @@ export default function PlazaScene({ bricks }: { bricks: Brick[] }) {
     const camera = new THREE.PerspectiveCamera(50, mount.clientWidth / mount.clientHeight, 0.05, 1000)
     camera.position.copy(EYE)
     camera.lookAt(LOOK_AT)
+    // Which pavers get names is always decided from the plaza view, even while the ceremony camera is elsewhere.
+    const home = camera.clone()
 
     const render = () => renderer.render(scene, camera)
     const anisotropy = renderer.capabilities.getMaxAnisotropy()
@@ -117,6 +126,10 @@ export default function PlazaScene({ bricks }: { bricks: Brick[] }) {
     const pavers: Paver[] = []
     let engraved: Paver[] = []
     let disposed = false
+    // The ceremony's new names: their plates drop in and their pavers take the engraved tone as they land.
+    const { laying: laidCount, onLaid: whenLaid } = ceremonyRef.current
+    let laid: { plate: THREE.Mesh; paver: Paver; tint: THREE.Color }[] = []
+    let ceremonyTime = laidCount ? 0 : null
 
     engraveRef.current = () => {
       const names = bricksRef.current
@@ -127,22 +140,30 @@ export default function PlazaScene({ bricks }: { bricks: Brick[] }) {
       engraved = pavers
         .filter((paver) => {
           if (paver.position.distanceTo(EYE) > MAX_ENGRAVED_DISTANCE) return false
-          ndc.copy(paver.position).project(camera)
+          ndc.copy(paver.position).project(home)
           return Math.abs(ndc.x) < 1.1 && Math.abs(ndc.y) < 1.1 && ndc.z < 1
         })
         .sort((a, b) => a.position.distanceTo(EYE) - b.position.distanceTo(EYE))
         .slice(0, names.length ? MAX_ENGRAVED : 0)
+      for (const { plate } of laid) (plate.material as THREE.Material).dispose()
+      laid = []
       engraved.forEach((paver, i) => {
         const brick = names[i % names.length]
         // Tint this one paver to the engraved tone, a touch lighter or darker per brick.
         const base = (paver.mesh.material as THREE.MeshStandardMaterial).color
-        const tint = ENGRAVED_TONE.clone().multiplyScalar(brightnessOf(brick.id))
-        paver.mesh.setColorAt(paver.index, new THREE.Color(tint.r / base.r, tint.g / base.g, tint.b / base.b))
+        const engravedTone = ENGRAVED_TONE.clone().multiplyScalar(brightnessOf(brick.id))
+        const tint = new THREE.Color(engravedTone.r / base.r, engravedTone.g / base.g, engravedTone.b / base.b)
         if (!materials.has(brick.name)) materials.set(brick.name, engraving(brick.name, anisotropy))
         const plate = new THREE.Mesh(PLATE, materials.get(brick.name))
         plate.position.copy(paver.position).setY(paver.position.y + BRICK_HALF_HEIGHT + 0.0005)
         plates.add(plate)
+        if (ceremonyTime !== null && i < laidCount) {
+          // Its own material, so it can fade in on its own; the ceremony places it each frame.
+          plate.material = materials.get(brick.name)!.clone()
+          laid.push({ plate, paver, tint })
+        } else paver.mesh.setColorAt(paver.index, tint)
       })
+      if (ceremonyTime !== null) layBricks()
       for (const mesh of new Set(pavers.map((paver) => paver.mesh))) mesh.instanceColor!.needsUpdate = true
       render()
     }
@@ -260,8 +281,72 @@ export default function PlazaScene({ bricks }: { bricks: Brick[] }) {
         scene.add(instanced)
       }
       scene.add(gltf.scene)
-      document.fonts.ready.then(() => !disposed && engraveRef.current())
+      document.fonts.ready.then(() => {
+        if (disposed) return
+        engraveRef.current()
+        if (ceremonyTime !== null) startCeremony()
+      })
     })
+
+    // --- Race-end ceremony ---
+    const glow = new THREE.PointLight(0xffc070, 0, 1.5) // flares on each name as it lands
+    scene.add(glow)
+    const closeUp = { pos: new THREE.Vector3(), target: new THREE.Vector3() }
+    const target = new THREE.Vector3()
+    const landAt = (i: number) => CEREMONY.HOLD + i * CEREMONY.STAGGER + CEREMONY.DROP
+
+    // Puts each new name where it is at the current ceremony time: waiting above, dropping, or set.
+    function layBricks() {
+      let flare = 0
+      laid.forEach(({ plate, paver, tint }, i) => {
+        const p = THREE.MathUtils.clamp((ceremonyTime! - (landAt(i) - CEREMONY.DROP)) / CEREMONY.DROP, 0, 1)
+        const rest = paver.position.y + BRICK_HALF_HEIGHT + 0.0005
+        plate.position.setY(rest + (1 - p) ** 2 * 0.5)
+        plate.scale.setScalar(1 + (1 - p) * 0.6)
+        ;(plate.material as THREE.MeshStandardMaterial).opacity = p
+        paver.mesh.setColorAt(paver.index, p === 1 ? tint : new THREE.Color(1, 1, 1))
+        const since = ceremonyTime! - landAt(i)
+        if (since >= 0 && since < 1.2 && 1 - since / 1.2 > flare) {
+          flare = 1 - since / 1.2
+          glow.position.copy(paver.position).setY(paver.position.y + 0.25)
+        }
+      })
+      glow.intensity = flare * 3
+      for (const mesh of new Set(laid.map(({ paver }) => paver.mesh))) mesh.instanceColor!.needsUpdate = true
+    }
+
+    function startCeremony() {
+      if (!laid.length) return finishCeremony()
+      // Close over the new names, a little toward the plaza view so they read the same way up.
+      laid.forEach(({ paver }) => closeUp.target.add(paver.position))
+      closeUp.target.divideScalar(laid.length)
+      const towardEye = EYE.clone().sub(closeUp.target).setY(0).setLength(0.5)
+      closeUp.pos.copy(closeUp.target).add(towardEye).setY(closeUp.target.y + 1.1)
+      let last = performance.now()
+      renderer.setAnimationLoop((now) => {
+        ceremonyTime! += Math.min((now - last) / 1000, 0.1)
+        last = now
+        layBricks()
+        const panFrom = landAt(laid.length - 1) + CEREMONY.LINGER
+        // Only the new names at first; everyone else's fade in around them as the view pulls back.
+        const reveal = THREE.MathUtils.smootherstep(ceremonyTime!, panFrom, panFrom + CEREMONY.PAN_OUT / 2)
+        for (const material of materials.values()) material.opacity = reveal
+        const t = THREE.MathUtils.smootherstep(ceremonyTime!, panFrom, panFrom + CEREMONY.PAN_OUT)
+        camera.position.lerpVectors(closeUp.pos, EYE, t)
+        camera.lookAt(target.lerpVectors(closeUp.target, LOOK_AT, t))
+        render()
+        if (ceremonyTime! >= panFrom + CEREMONY.PAN_OUT) finishCeremony()
+      })
+    }
+
+    function finishCeremony() {
+      renderer.setAnimationLoop(null)
+      ceremonyTime = null
+      glow.intensity = 0
+      for (const material of materials.values()) material.opacity = 1
+      engraveRef.current() // settle into the plain plaza view
+      whenLaid?.()
+    }
 
     // Snow drifts down over the still plaza; the 3D scene itself only redraws when something changes.
     const snow = createSnowOverlay(mount)
@@ -276,15 +361,18 @@ export default function PlazaScene({ bricks }: { bricks: Brick[] }) {
     const onResize = () => {
       renderer.setSize(mount.clientWidth, mount.clientHeight)
       snow.resize()
-      camera.aspect = mount.clientWidth / mount.clientHeight
+      camera.aspect = home.aspect = mount.clientWidth / mount.clientHeight
       camera.updateProjectionMatrix()
+      home.updateProjectionMatrix()
       engraveRef.current()
     }
     window.addEventListener('resize', onResize)
 
     return () => {
       disposed = true
+      renderer.setAnimationLoop(null)
       cancelAnimationFrame(frame)
+      for (const { plate } of laid) (plate.material as THREE.Material).dispose()
       snow.dispose()
       window.removeEventListener('resize', onResize)
       for (const material of materials.values()) {
