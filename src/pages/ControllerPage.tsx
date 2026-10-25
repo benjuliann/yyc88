@@ -1,7 +1,8 @@
 import { useEffect, useState, type SubmitEvent } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Logo from '../components/Logo'
-import ArrowPad from '../components/ArrowPad'
+import TiltPad from '../components/TiltPad'
+import RotatePhone from '../components/RotatePhone'
 import { getPlayerId, isValidRoomCode, joinRoom, watchRoom, type Phase } from '../lib/room'
 import '../styles/controller.css'
 
@@ -22,6 +23,7 @@ function EnterCode() {
 
   return (
     <form className="controller__form" onSubmit={submit}>
+      <RotatePhone to="portrait" />
       <Logo />
       <input
         className="controller__input controller__input--code"
@@ -63,6 +65,7 @@ function JoinRoom({ room }: { room: string }) {
   if (phase === null) {
     return (
       <div className="controller__form">
+        <RotatePhone to="portrait" />
         <p className="controller__message">Room {room} doesn't exist.</p>
         <a className="join-race join-race--outline" href="/play">
           Try another code
@@ -73,9 +76,10 @@ function JoinRoom({ room }: { room: string }) {
 
   if (joined) {
     // The controller only appears once the host starts the race.
-    if (phase === 'playing') return <ArrowPad room={room} />
+    if (phase === 'playing') return <TiltPad room={room} />
     return (
       <div className="controller__form">
+        <RotatePhone to="portrait" />
         <Logo />
         <p className="controller__message">You're in, {name.trim()}! Look at the big screen.</p>
       </div>
@@ -84,6 +88,7 @@ function JoinRoom({ room }: { room: string }) {
 
   return (
     <form className="controller__form" onSubmit={submit}>
+      <RotatePhone to="portrait" />
       <Logo />
       <p className="controller__room">Room {room}</p>
       <input

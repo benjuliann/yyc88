@@ -62,3 +62,32 @@
 .controller .join-race--solid {
   width: 100%;
 }
+
+.rotate-phone {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: #101a33;
+  text-align: center;
+}
+
+.rotate-phone__icon {
+  font-size: 4rem;
+}
+
+@media (orientation: landscape) {
+  .rotate-phone--portrait {
+    display: flex;
+  }
+}
+
+@media (orientation: portrait) {
+  .rotate-phone--landscape {
+    display: flex;
+  }
+}
