@@ -137,12 +137,18 @@ export function CustomizeSkier() {
   useEffect(() => watchRoom(room, setPhase), [room])
   useEffect(() => watchPlayer(room, getPlayerId(), setMe), [room])
 
+  // Saved to the room too, so the big screen can dress this player's skier.
+  const done = async (skier: SkierConfig) => {
+    try {
+      await saveSkier(room, getPlayerId(), skier)
+      navigate(`/play/${room}`)
+    } catch (err) {
+      console.error(err)
+      window.alert("Couldn't save your skier. Try again.")
+    }
+  }
+
   if (phase === undefined || me === undefined) return null
   if (phase !== 'lobby' || !me) return <Navigate to={`/play/${room}`} replace />
-  const done = (skier: SkierConfig) => {
-    // Shared with the big screen for the race lineup; the phone moves on either way.
-    saveSkier(room, getPlayerId(), skier).catch((err) => console.error(err))
-    navigate(`/play/${room}`)
-  }
   return <CustomizePage name={me.name} submitLabel="Done" onSubmit={done} />
 }

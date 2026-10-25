@@ -55,7 +55,8 @@ export default function GamePage() {
     )
   }
 
-  if (phase === 'playing') return <SkiJumpPage onFinish={endRace} contestants={players} />
+  // One skier for now: the first player to join, dressed as they customized on their phone.
+  if (phase === 'playing') return <SkiJumpPage onFinish={endRace} skier={players[0]?.skier} />
 
   const host = window.location.host
   return (

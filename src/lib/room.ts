@@ -19,7 +19,6 @@ import type { SkierConfig } from '../pages/CustomizePage'
 const LETTERS = 'ABCDEFGHJKLMNPQRSTUVWXYZ'
 
 export type Phase = 'lobby' | 'playing'
-// `skier` is set once the player customizes on their phone.
 export type Player = { id: string; name: string; skier?: SkierConfig }
 
 export function isValidRoomCode(code: string) {
@@ -59,6 +58,7 @@ export function joinRoom(code: string, playerId: string, name: string) {
   return setDoc(doc(db, 'rooms', code, 'players', playerId), { name, joinedAt: serverTimestamp() })
 }
 
+// Lets the big screen dress this player's skier the way they customized it on their phone.
 export function saveSkier(code: string, playerId: string, skier: SkierConfig) {
   return updateDoc(doc(db, 'rooms', code, 'players', playerId), { skier })
 }

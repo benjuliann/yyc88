@@ -22,17 +22,25 @@ service cloud.firestore {
       // deleteRoom() removes finished rooms.
       allow delete: if true;
 
-      // Players in a room: rooms/{CODE}/players/{playerId} with { name, joinedAt }.
+      // Players in a room: rooms/{CODE}/players/{playerId} with { name, joinedAt, skier? }.
       match /players/{playerId} {
         allow read: if true;
 
-        // Updates are allowed so a player who refreshes can rejoin under the same id.
-        allow create, update: if exists(/databases/$(database)/documents/rooms/$(code))
-          && request.resource.data.keys().hasOnly(['name', 'joinedAt'])
-          && request.resource.data.name is string
-          && request.resource.data.name.size() > 0
-          && request.resource.data.name.size() <= 20
-          && request.resource.data.joinedAt == request.time;
+        function joining() {
+          return exists(/databases/$(database)/documents/rooms/$(code))
+            && request.resource.data.keys().hasOnly(['name', 'joinedAt'])
+            && request.resource.data.name is string
+            && request.resource.data.name.size() > 0
+            && request.resource.data.name.size() <= 20
+            && request.resource.data.joinedAt == request.time;
+        }
+
+        allow create: if joining();
+        // Rejoining under the same id after a refresh, or saving the customized skier.
+        allow update: if joining()
+          || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['skier'])
+            && request.resource.data.skier is map
+            && request.resource.data.skier.size() <= 30);
 
         // A player saving their customized skier (shown in the race lineup) changes nothing else.
         allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['skier'])

@@ -6,6 +6,8 @@ import ScorePopup from '../components/ScorePopup'
 import { MODELS, DISTANCES, clipFile, fallFile, fixBlenderLights, type Manifest } from '../lib/skiModels'
 import { playApplause, playCountdownBeep, playScoreSound, playWipeoutSound, stopCrowdSounds, syncSlopeSounds } from '../lib/scoreSounds'
 import { createSnowOverlay } from '../lib/snowOverlay'
+import { applyGearPose, applySkierConfig, loadSkierAccessories } from '../lib/skierCustomization'
+import { loadSkier, type SkierConfig } from './CustomizePage'
 import { applySkierConfig, loadSkierAccessories } from '../lib/skierCustomization'
 import { loadSkier, randomOutfit, type SkierConfig } from './CustomizePage'
 import { podiumSpot, putOnPodium, type Place } from '../lib/podium'
@@ -93,6 +95,8 @@ export default function SkiJumpPage({ onFinish, contestants }: { onFinish?: () =
   // The players at the moment the race started; later joins/leaves don't change the lineup.
   const [lineupPlayers] = useState(() => contestants ?? [])
   const mountRef = useRef<HTMLDivElement>(null)
+  // Read once: the scene is built when the jump mounts.
+  const racerRef = useRef(racer)
   const needleRef = useRef<HTMLDivElement>(null)
   const lipFillRef = useRef<HTMLDivElement>(null)
   const [phase, setPhase] = useState<Phase>('loading')
@@ -125,12 +129,13 @@ export default function SkiJumpPage({ onFinish, contestants }: { onFinish?: () =
     scene.add(new THREE.HemisphereLight(0xffffff, 0x8a8a7a, 1))
 
     const loader = new GLTFLoader()
-    // The player's skier from the customizer (saved in this browser), applied to every clip as it loads.
-    const skier = loadSkier()
+    // The racer's skier from the customizer, applied to every clip as it loads.
+    const skier = racerRef.current ?? loadSkier()
     const accessories = loadSkierAccessories(`${MODELS}/skier-accessories.glb`)
     const loadSkierClip = (url: string) =>
       Promise.all([loader.loadAsync(url), accessories]).then(([gltf, acc]) => {
         applySkierConfig(gltf.scene, acc, skier)
+        applyGearPose(gltf, skier.gear)
         return gltf
       })
     const timer = new THREE.Timer()
