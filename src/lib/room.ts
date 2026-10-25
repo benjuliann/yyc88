@@ -54,8 +54,14 @@ export async function deleteRoom(code: string) {
   await batch.commit()
 }
 
-export function joinRoom(code: string, playerId: string, name: string) {
-  return setDoc(doc(db, 'rooms', code, 'players', playerId), { name, joinedAt: serverTimestamp() })
+export const MAX_PLAYERS = 5
+
+// Returns false when the room is already full (a player rejoining under their own id still gets in).
+export async function joinRoom(code: string, playerId: string, name: string) {
+  const players = await getDocs(collection(db, 'rooms', code, 'players'))
+  if (players.size >= MAX_PLAYERS && !players.docs.some((player) => player.id === playerId)) return false
+  await setDoc(doc(db, 'rooms', code, 'players', playerId), { name, joinedAt: serverTimestamp() })
+  return true
 }
 
 // Lets the big screen dress this player's skier the way they customized it on their phone.

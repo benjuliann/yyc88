@@ -7,8 +7,6 @@ import { MODELS, DISTANCES, clipFile, fallFile, fixBlenderLights, type Manifest 
 import { playApplause, playCountdownBeep, playScoreSound, playWipeoutSound, stopCrowdSounds, syncSlopeSounds } from '../lib/scoreSounds'
 import { createSnowOverlay } from '../lib/snowOverlay'
 import { applyGearPose, applySkierConfig, loadSkierAccessories } from '../lib/skierCustomization'
-import { loadSkier, type SkierConfig } from './CustomizePage'
-import { applySkierConfig, loadSkierAccessories } from '../lib/skierCustomization'
 import { loadSkier, randomOutfit, type SkierConfig } from './CustomizePage'
 import { podiumSpot, putOnPodium, type Place } from '../lib/podium'
 import type { Player } from '../lib/room'
@@ -60,11 +58,16 @@ const LINEUP_PER = 1.6
 const LINEUP_SPACING = 3
 const LINEUP_Z = 356
 
-// Seconds the podium shows after a clean jump before moving on (race end, or the bricks page).
+// Seconds the podium shows after the last jump before moving on (race end, or the bricks page).
 const FINISH_DELAY = 5
+// Seconds the score stays up after a landing before the next racer's turn.
+const NEXT_TURN_DELAY = 3
+// Tries per racer: a wipeout gets one more go; wiping out on the last one ends the turn with no distance.
+const MAX_TRIES = 2
 
 
-type Phase = 'loading' | 'opening' | 'lineup' | 'ready' | 'countdown' | 'inrun' | 'flight' | 'done' | 'crash' | 'fall'
+type Phase = 'loading' | 'opening' | 'lineup' | 'ready' | 'countdown' | 'inrun' | 'flight' | 'next' | 'done' | 'crash' | 'fall'
+type Result = { name: string; distance: number | null } // null: wiped out on every try
 type Takeoff = { label: string; balance: number; timing: number }
 
 function rateTakeoff(balance: number, pressT: number | null): Takeoff & { distance: number } {
@@ -90,17 +93,21 @@ function landingHalfWidth(profile: [number, number][], z: number) {
 }
 
 // `onFinish` is set when the jump is part of a race: it's called once the jump is done.
-// `contestants` (race only) get an opening ceremony and a lineup before the start.
+// `contestants` (race only) get an opening ceremony and a lineup, then jump one at a time in join order
+// and are ranked on the podium by distance.
 export default function SkiJumpPage({ onFinish, contestants }: { onFinish?: () => void; contestants?: Player[] }) {
   // The players at the moment the race started; later joins/leaves don't change the lineup.
   const [lineupPlayers] = useState(() => contestants ?? [])
   const mountRef = useRef<HTMLDivElement>(null)
-  // Read once: the scene is built when the jump mounts.
-  const racerRef = useRef(racer)
   const needleRef = useRef<HTMLDivElement>(null)
   const lipFillRef = useRef<HTMLDivElement>(null)
   const [phase, setPhase] = useState<Phase>('loading')
   const [lineupName, setLineupName] = useState<{ name: string; index: number; total: number } | null>(null)
+  // Whose turn it is (race only), and the final standings for the podium.
+  const [racerName, setRacerName] = useState(() => lineupPlayers[0]?.name ?? '')
+  const [standings, setStandings] = useState<Result[]>([])
+  // The try the racer is on (shown at the gate and after a wipeout).
+  const [attempt, setAttempt] = useState(1)
   const [takeoff, setTakeoff] = useState<Takeoff | null>(null)
   const [popup, setPopup] = useState<{ distance: number; id: number } | null>(null)
   // Why the skier wiped out (shown under WIPEOUT!), or null.
@@ -129,15 +136,25 @@ export default function SkiJumpPage({ onFinish, contestants }: { onFinish?: () =
     scene.add(new THREE.HemisphereLight(0xffffff, 0x8a8a7a, 1))
 
     const loader = new GLTFLoader()
-    // The racer's skier from the customizer, applied to every clip as it loads.
-    const skier = racerRef.current ?? loadSkier()
+    // Who jumps, in join order, each in their customized skier (a random outfit if they never
+    // customized). A solo jump is one turn in the skier saved in this browser.
+    const racers = lineupPlayers.length
+      ? lineupPlayers.map((p) => ({ name: p.name, skier: p.skier ?? { ...randomOutfit(), name: p.name } }))
+      : [{ name: '', skier: loadSkier() }]
+    let turn = 0
+    let tries = 0 // runs started this turn
+    const results: (Result & { skier: SkierConfig })[] = []
+    // The current racer's skier, applied to every clip as it loads.
+    let skier = racers[0].skier
     const accessories = loadSkierAccessories(`${MODELS}/skier-accessories.glb`)
-    const loadSkierClip = (url: string) =>
-      Promise.all([loader.loadAsync(url), accessories]).then(([gltf, acc]) => {
-        applySkierConfig(gltf.scene, acc, skier)
-        applyGearPose(gltf, skier.gear)
+    const loadSkierClip = (url: string) => {
+      const dressAs = skier
+      return Promise.all([loader.loadAsync(url), accessories]).then(([gltf, acc]) => {
+        applySkierConfig(gltf.scene, acc, dressAs)
+        applyGearPose(gltf, dressAs.gear)
         return gltf
       })
+    }
     const timer = new THREE.Timer()
     let disposed = false
 
@@ -188,11 +205,31 @@ export default function SkiJumpPage({ onFinish, contestants }: { onFinish?: () =
         }
         toGate(inrun)
         if (lineupPlayers.length) beginOpening()
-        // Warm the rest in the background, one at a time.
-        DISTANCES.reduce((p, m) => p.then(() => (disposed ? undefined : getClip(m).then(() => undefined))), Promise.resolve())
-        getFall(INRUN_CLIP) // used for rail wipeouts on the in-run
+        warmClips()
       },
     )
+
+    // Fetch every clip for the current racer in the background, one at a time.
+    function warmClips() {
+      DISTANCES.reduce((p, m) => p.then(() => (disposed ? undefined : getClip(m).then(() => undefined))), Promise.resolve())
+      getFall(INRUN_CLIP) // used for rail wipeouts on the in-run
+    }
+
+    // The next racer: clips are re-dressed in their skier, and they start at the gate.
+    const nextTurn = async () => {
+      if (disposed) return
+      turn++
+      tries = 0
+      skier = racers[turn].skier
+      setPopup(null)
+      setTakeoff(null)
+      clips.clear()
+      falls.clear()
+      const inrun = await getClip(INRUN_CLIP)
+      if (disposed) return
+      toGate(inrun)
+      warmClips()
+    }
 
     // --- current clip ---
     // `steer` (from Blender) sits between the animated trajectory root and the body and is never
@@ -230,16 +267,36 @@ export default function SkiJumpPage({ onFinish, contestants }: { onFinish?: () =
       action.play()
       action.time = startTime
       mixer.addEventListener('finished', () => {
-        if (game.phase === 'fall') getClip(INRUN_CLIP).then((g) => !disposed && toGate(g))
-        if (game.phase !== 'flight') return
-        game.phase = 'done'
-        setPhase('done')
-        startCeremony()
+        if (game.phase === 'fall') afterWipeout()
+        if (game.phase === 'flight') endTurn(game.distance)
       })
     }
 
-    // After a clean landing: the player's skier on gold, two random rivals on silver and bronze,
-    // each doing a looping cheer, filmed by a camera that slowly pushes in on the podium.
+    // A clean landing (or a wipeout on the last try) ends the turn: next racer, or the podium.
+    const endTurn = (distance: number | null) => {
+      results.push({ ...racers[turn], distance })
+      if (turn < racers.length - 1) {
+        game.phase = 'next'
+        setPhase('next')
+        setRacerName(racers[turn + 1].name)
+        setTimeout(nextTurn, NEXT_TURN_DELAY * 1000)
+        return
+      }
+      game.phase = 'done'
+      setPhase('done')
+      setCrashed(null)
+      startCeremony()
+    }
+
+    // After a wipeout: back to the gate for another try, or the turn is over.
+    const afterWipeout = () => {
+      if (tries < MAX_TRIES) getClip(INRUN_CLIP).then((g) => !disposed && toGate(g))
+      else endTurn(null)
+    }
+
+    // After the last jump: the racers ranked by distance (ties keep jump order), up to five: three
+    // on the steps, 4th and 5th beside them. A solo jumper stands on gold alone. Each does a
+    // looping cheer, filmed by a camera that slowly pushes in on the podium.
     let podium: THREE.Object3D | null = null
     let ceremony: { skiers: THREE.Object3D[]; mixers: THREE.AnimationMixer[]; time: number } | null = null
     const podiumCam = new THREE.PerspectiveCamera(40, 1, 0.3, 5000)
@@ -258,12 +315,13 @@ export default function SkiJumpPage({ onFinish, contestants }: { onFinish?: () =
           applySkierConfig(g.scene, acc, { ...config, gear: 'skis' })
           return { place, gltf: g }
         })
-      const rival = (): SkierConfig => ({ ...randomOutfit(), name: 'Rival' })
-      const placed = await Promise.all([
-        cheer(1, pickOne(['ArmsUp', 'Jump', 'Wave', 'FistPump']), skier),
-        cheer(2, 'Clap', rival()),
-        cheer(3, pickOne(['Clap', 'Wave']), rival()),
-      ])
+      const ranked = [...results].sort((a, b) => (b.distance ?? -1) - (a.distance ?? -1)).slice(0, 5)
+      if (lineupPlayers.length) setStandings(ranked.map(({ name, distance }) => ({ name, distance })))
+      const placed = await Promise.all(
+        ranked.map((r, i) =>
+          cheer((i + 1) as Place, i === 0 ? pickOne(['ArmsUp', 'Jump', 'Wave', 'FistPump']) : pickOne(['Clap', 'Wave']), r.skier),
+        ),
+      )
       if (disposed || game.phase !== 'done' || !podium) return
       endCeremony()
       ceremony = {
@@ -299,8 +357,8 @@ export default function SkiJumpPage({ onFinish, contestants }: { onFinish?: () =
           lineupPlayers.map((p) => loader.loadAsync(`${MODELS}/character/skier.glb`).then((g) => ({ g, p }))),
         )
         if (disposed) return
-        lineup = loaded.map(({ g, p }, i) => {
-          applySkierConfig(g.scene, acc, p.skier ?? { ...randomOutfit(), name: p.name })
+        lineup = loaded.map(({ g }, i) => {
+          applySkierConfig(g.scene, acc, racers[i].skier)
           const x = 45 + (i - (n - 1) / 2) * LINEUP_SPACING
           const y = groundY(x, 40, LINEUP_Z) ?? 4
           g.scene.position.set(x, y, LINEUP_Z)
@@ -376,6 +434,7 @@ export default function SkiJumpPage({ onFinish, contestants }: { onFinish?: () =
       play(inrun, 0)
       action!.paused = true
       setCrashed(null)
+      setAttempt(tries + 1)
       setPhase('ready')
     }
 
@@ -409,6 +468,7 @@ export default function SkiJumpPage({ onFinish, contestants }: { onFinish?: () =
       endCeremony()
       const inrun = await getClip(INRUN_CLIP)
       if (disposed) return
+      tries++
       Object.assign(game, { phase: 'countdown', countdownTime: 0, balance: 0, velocity: 0, balanceSum: 0, balanceTime: 0, pressT: null, landed: false, slide: 0, lean: 0 })
       setTakeoff(null)
       setPopup(null)
@@ -623,7 +683,7 @@ export default function SkiJumpPage({ onFinish, contestants }: { onFinish?: () =
         crashDisp.addScaledVector(crashVel, dt)
         spinQ.setFromAxisAngle(spinAxis, TUMBLE_SPIN * Math.exp(-1.2 * game.crashTime) * dt)
         crashQ.premultiply(spinQ)
-        if (game.crashTime >= TUMBLE_TIME) getClip(INRUN_CLIP).then((g) => !disposed && toGate(g))
+        if (game.crashTime >= TUMBLE_TIME) afterWipeout()
       }
 
       if (shiftedFall && root && pos) {
@@ -763,7 +823,35 @@ export default function SkiJumpPage({ onFinish, contestants }: { onFinish?: () =
         <div className="ski-jump__takeoff">
           <div className="ski-jump__takeoff-label">WIPEOUT!</div>
           <div className="ski-jump__help">{crashed}</div>
+          <div className="ski-jump__help">{attempt < MAX_TRIES ? 'ONE MORE TRY' : 'NO TRIES LEFT'}</div>
         </div>
+      )}
+
+      {phase === 'ready' && (
+        <div key={`${racerName}-${attempt}`} className="ski-jump__title">
+          {racerName && <div className="ski-jump__title-sub">NOW JUMPING</div>}
+          {racerName && <div className="ski-jump__title-main">{racerName}</div>}
+          <div className="ski-jump__title-sub">{attempt < MAX_TRIES ? `TRY ${attempt} / ${MAX_TRIES}` : 'LAST TRY'}</div>
+        </div>
+      )}
+
+      {/* At the bottom, clear of the distance (or wipeout) still showing at the top. */}
+      {phase === 'next' && (
+        <div key={racerName} className="ski-jump__title ski-jump__title--bottom">
+          <div className="ski-jump__title-sub">NEXT UP</div>
+          <div className="ski-jump__title-main">{racerName}</div>
+        </div>
+      )}
+
+      {phase === 'done' && standings.length > 0 && (
+        <ol className="ski-jump__standings">
+          {standings.map((r, i) => (
+            <li key={i}>
+              <span>{i + 1}. {r.name}</span>
+              <span>{r.distance === null ? 'WIPEOUT' : `${r.distance} m`}</span>
+            </li>
+          ))}
+        </ol>
       )}
 
       {phase === 'ready' && (

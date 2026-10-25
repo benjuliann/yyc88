@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import QRCode from 'react-qr-code'
 import Logo from '../components/Logo'
 import JoinRaceButton from '../components/JoinRaceButton'
-import { deleteRoom, startRace, watchPlayers, watchRoom, type Phase, type Player } from '../lib/room'
+import { MAX_PLAYERS, deleteRoom, startRace, watchPlayers, watchRoom, type Phase, type Player } from '../lib/room'
 import PlazaCeremony from '../memorial/PlazaCeremony'
 import { addBricks, type Brick } from '../memorial/bricks'
 import SkiJumpPage from './SkiJumpPage'
@@ -55,8 +55,7 @@ export default function GamePage() {
     )
   }
 
-  // One skier for now: the first player to join, dressed as they customized on their phone.
-  if (phase === 'playing') return <SkiJumpPage onFinish={endRace} skier={players[0]?.skier} />
+  if (phase === 'playing') return <SkiJumpPage onFinish={endRace} contestants={players} />
 
   const host = window.location.host
   return (
@@ -64,7 +63,7 @@ export default function GamePage() {
       <header className="lobby__header">
         <Logo />
         <span className="lobby__count">
-          {players.length} {players.length === 1 ? 'player' : 'players'}
+          {players.length} / {MAX_PLAYERS} players
         </span>
       </header>
 

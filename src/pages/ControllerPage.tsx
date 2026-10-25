@@ -4,7 +4,7 @@ import Logo from '../components/Logo'
 import JoinRaceButton from '../components/JoinRaceButton'
 import TiltPad from '../components/TiltPad'
 import RotatePhone from '../components/RotatePhone'
-import { getPlayerId, isValidRoomCode, joinRoom, leaveRoom, saveSkier, watchPlayer, watchRoom, type Phase, type Player } from '../lib/room'
+import { MAX_PLAYERS, getPlayerId, isValidRoomCode, joinRoom, leaveRoom, saveSkier, watchPlayer, watchPlayers, watchRoom, type Phase, type Player } from '../lib/room'
 import CustomizePage, { type SkierConfig } from './CustomizePage'
 import '../styles/controller.css'
 
@@ -54,11 +54,13 @@ function JoinRoom({ room }: { room: string }) {
   useEffect(() => watchRoom(room, setPhase), [room])
   // Joined is read from the room, so coming back from customizing doesn't ask for the name again.
   useEffect(() => watchPlayer(room, getPlayerId(), setMe), [room])
+  const [playerCount, setPlayerCount] = useState(0)
+  useEffect(() => watchPlayers(room, (players) => setPlayerCount(players.length)), [room])
 
   const submit = async (event: SubmitEvent) => {
     event.preventDefault()
     try {
-      await joinRoom(room, getPlayerId(), name.trim())
+      if (!(await joinRoom(room, getPlayerId(), name.trim()))) setError(`Maximum limit reached: this room already has ${MAX_PLAYERS} players.`)
     } catch (err) {
       console.error(err)
       setError("Couldn't join. Try again.")
@@ -81,6 +83,21 @@ function JoinRoom({ room }: { room: string }) {
       <div className="controller__form">
         <RotatePhone to="portrait" />
         <p className="controller__message">Room {room} doesn't exist.</p>
+        <a className="join-race join-race--outline" href="/play">
+          Try another code
+        </a>
+      </div>
+    )
+  }
+
+  // Full before this phone got in: say so up front instead of asking for a name.
+  if (!me && playerCount >= MAX_PLAYERS) {
+    return (
+      <div className="controller__form">
+        <RotatePhone to="portrait" />
+        <Logo />
+        <p className="controller__message">Maximum limit reached</p>
+        <p className="controller__room">Room {room} already has {MAX_PLAYERS} players.</p>
         <a className="join-race join-race--outline" href="/play">
           Try another code
         </a>
@@ -137,15 +154,14 @@ export function CustomizeSkier() {
   useEffect(() => watchRoom(room, setPhase), [room])
   useEffect(() => watchPlayer(room, getPlayerId(), setMe), [room])
 
-  // Saved to the room too, so the big screen can dress this player's skier.
-  const done = async (skier: SkierConfig) => {
-    try {
-      await saveSkier(room, getPlayerId(), skier)
-      navigate(`/play/${room}`)
-    } catch (err) {
+  // Saved to the room too, so the big screen can dress this player's skier. Firestore applies the
+  // write locally right away, so go back without waiting for the server to confirm it.
+  const done = (skier: SkierConfig) => {
+    saveSkier(room, getPlayerId(), skier).catch((err) => {
       console.error(err)
-      window.alert("Couldn't save your skier. Try again.")
-    }
+      window.alert("Couldn't save your skier to the room. Customize it again to retry.")
+    })
+    navigate(`/play/${room}`)
   }
 
   if (phase === undefined || me === undefined) return null

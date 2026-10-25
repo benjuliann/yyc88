@@ -151,7 +151,8 @@
   animation: score-slam 0.45s cubic-bezier(0.2, 1.6, 0.4, 1) both;
 }
 
-.ski-jump__title--lineup {
+.ski-jump__title--lineup,
+.ski-jump__title--bottom {
   top: auto;
   bottom: 10%;
 }
@@ -168,6 +169,35 @@
   letter-spacing: 4px;
   color: #fff;
   text-shadow: 3px 3px 0 #1b1464;
+}
+
+/* Final standings under the podium: name and distance, best first. */
+.ski-jump__standings {
+  position: absolute;
+  bottom: 6%;
+  left: 50%;
+  min-width: min(420px, 90vw);
+  margin: 0;
+  padding: 12px 20px;
+  transform: translateX(-50%);
+  list-style: none;
+  background: rgba(27, 20, 100, 0.8);
+  border: 3px solid #ffe600;
+  pointer-events: none;
+  animation: score-slam 0.45s cubic-bezier(0.2, 1.6, 0.4, 1) both;
+}
+
+.ski-jump__standings li {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 4px 0;
+  font-size: clamp(14px, 2.4vw, 26px);
+  color: #fff;
+}
+
+.ski-jump__standings li:first-child {
+  color: #ffe600;
 }
 
 .ski-jump__takeoff-label {

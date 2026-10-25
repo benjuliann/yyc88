@@ -11,10 +11,22 @@
 import * as THREE from 'three'
 import type { GLTF } from 'three/addons/loaders/GLTFLoader.js'
 
-export type Place = 1 | 2 | 3
+export type Place = 1 | 2 | 3 | 4 | 5
+
+// 4th and 5th have no step: they stand on the ground just outside 2nd and 3rd.
+const BESIDE: Record<4 | 5, THREE.Vector3Tuple> = { 4: [5, 0, 0], 5: [-5, 0, 0] }
 
 export function podiumSpot(podium: THREE.Object3D, place: Place): THREE.Object3D {
-  const spot = podium.getObjectByName(`Podium_|_spot_${place}`)
+  const name = `Podium_|_spot_${place}`
+  let spot = podium.getObjectByName(name)
+  if (!spot && place > 3) {
+    spot = new THREE.Object3D()
+    spot.name = name
+    const first = podiumSpot(podium, 1)
+    spot.position.set(...BESIDE[place as 4 | 5])
+    spot.quaternion.copy(first.quaternion) // facing the front, like the steps
+    first.parent!.add(spot)
+  }
   if (!spot) throw new Error(`podium spot ${place} not found`)
   return spot
 }
