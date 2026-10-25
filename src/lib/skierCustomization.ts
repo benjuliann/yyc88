@@ -8,7 +8,7 @@
 // accessories from scratch each time. Accessories are parented to the animated skier nodes
 // (head, torso, ski), so they follow every Jump and Fall animation with no extra work.
 import * as THREE from 'three'
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
+import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js'
 import type { SkierConfig } from '../pages/CustomizePage'
 
 // Material names in the clip GLBs.
@@ -158,4 +158,64 @@ export function applySkierConfig(skier: THREE.Object3D, accessories: THREE.Objec
   if (c.scarfColor) attach('scarf', { 'acc • scarf': c.scarfColor })
   if (c.packColor) attach('backpack', { 'acc • backpack': c.packColor })
   if (c.gear !== 'skis') attach(`gear_${c.gear}`, { 'acc • gear': c.gearColor })
+}
+
+// The clips are animated for skis. Every body part is its own node under "articulated body
+// coordinates" (+Y up, +Z down the hill, left side at -X; limbs are 1 m long on Y and scaled to
+// length), so other gear re-poses the body here. Call once per clip, after applySkierConfig.
+export function applyGearPose(gltf: GLTF, gear: SkierConfig['gear']): void {
+  const body = findPart(gltf.scene, 'articulated body coordinates')
+  if (!body || gear === 'skis') return
+
+  if (gear === 'snowboard') {
+    // Sideways stance, left foot forward. The board is attached to the ski, so the ski stays put
+    // and the rest of the body turns on top of it; the animation still plays (crouch, flight).
+    const board = findPart(gltf.scene, 'blue ski')
+    const stance = new THREE.Group()
+    for (const part of [...body.children]) if (part !== board) stance.add(part)
+    stance.rotation.y = Math.PI / 2
+    body.add(stance)
+    // Face down the hill, over the front shoulder.
+    findPart(gltf.scene, 'head pose')?.rotation.set(0, -1.2, 0)
+    return
+  }
+
+  // Bobsled: the body's animation is dropped so it holds a seated pose inside the sled,
+  // which still flies the whole jump with the trajectory.
+  const bodyNodes = new Set<string>()
+  body.traverse((o) => bodyNodes.add(o.name))
+  for (const clip of gltf.animations) {
+    clip.tracks = clip.tracks.filter((t) => !bodyNodes.has(THREE.PropertyBinding.parseTrackName(t.name).nodeName))
+  }
+
+  const place = (part: string, at: THREE.Vector3Tuple, rotateX = 0) => {
+    const o = findPart(gltf.scene, part)
+    o?.position.set(...at)
+    o?.rotation.set(rotateX, 0, 0)
+  }
+  // Puts a limb between two points.
+  const limb = (part: string, from: THREE.Vector3Tuple, to: THREE.Vector3Tuple) => {
+    const o = findPart(gltf.scene, part)
+    if (!o) return
+    const a = new THREE.Vector3(...from)
+    const dir = new THREE.Vector3(...to).sub(a)
+    o.position.copy(a).addScaledVector(dir, 0.5)
+    o.scale.set(1, dir.length(), 1)
+    o.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize())
+  }
+
+  place('pants pelvis', [0, 0.32, -0.25])
+  place('insulated jacket torso', [0, 0.6, -0.2], 0.15)
+  place('head pose', [0, 0.97, -0.15])
+  for (const [side, x] of [['', -1], ['.001', 1]] as const) {
+    // Knees up, feet forward against the front of the sled.
+    limb(`thigh${side}`, [x * 0.165, 0.32, -0.2], [x * 0.165, 0.45, 0.25])
+    limb(`shin${side}`, [x * 0.165, 0.45, 0.25], [x * 0.165, 0.32, 0.55])
+    place(`ski boot${side}`, [x * 0.17, 0.3, 0.62])
+    place(`boot cuff stripe${side}`, [x * 0.17, 0.41, 0.6])
+    // Hands on the sides of the sled.
+    limb(`upper arm${side}`, [x * 0.24, 0.82, -0.17], [x * 0.28, 0.6, 0.05])
+    limb(`forearm${side}`, [x * 0.28, 0.6, 0.05], [x * 0.3, 0.55, 0.33])
+    place(`glove${side}`, [x * 0.3, 0.55, 0.33])
+  }
 }

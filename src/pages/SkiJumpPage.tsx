@@ -5,7 +5,7 @@ import ScorePopup from '../components/ScorePopup'
 import { MODELS, DISTANCES, clipFile, fallFile, fixBlenderLights, type Manifest } from '../lib/skiModels'
 import { playApplause, playCountdownBeep, playScoreSound, playWipeoutSound, stopCrowdSounds, syncSlopeSounds } from '../lib/scoreSounds'
 import { createSnowOverlay } from '../lib/snowOverlay'
-import { applySkierConfig, loadSkierAccessories } from '../lib/skierCustomization'
+import { applyGearPose, applySkierConfig, loadSkierAccessories } from '../lib/skierCustomization'
 import { loadSkier } from './CustomizePage'
 import '../styles/ski-jump.css'
 
@@ -115,6 +115,7 @@ export default function SkiJumpPage({ onFinish }: { onFinish?: () => void }) {
     const loadSkierClip = (url: string) =>
       Promise.all([loader.loadAsync(url), accessories]).then(([gltf, acc]) => {
         applySkierConfig(gltf.scene, acc, skier)
+        applyGearPose(gltf, skier.gear)
         return gltf
       })
     const timer = new THREE.Timer()
