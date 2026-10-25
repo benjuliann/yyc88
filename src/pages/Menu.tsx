@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, JSX } from "react";
-import "./Menu.css";
+import "../styles/menu.css";
 
 // ---------- types ----------
 type Gear = "skis" | "snowboard" | "bobsled";
@@ -145,7 +145,7 @@ const randomOutfit = (): Omit<SkierConfig, "name"> => ({
   scarfColor: maybeColor(0.7),
   gogglesColor: maybeColor(0.4),
   shadesColor: maybeColor(0.25),
-  mittenColor: maybeColor(0.8),
+  mittenColor: randColor(),
   shirtColor: randColor(),
   pantsColor: randColor(),
   bootColor: randColor(),
@@ -984,8 +984,7 @@ export default function Menu({
             <ColorPicker
               label="Mittens"
               value={skier.mittenColor}
-              onChange={(v) => update("mittenColor", v)}
-              allowNone
+              onChange={(v) => update("mittenColor", v!)}
             />
 
             <h2>Accessories</h2>

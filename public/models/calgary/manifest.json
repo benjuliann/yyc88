@@ -954,5 +954,157 @@
       "rest_frame": 327
     }
   ],
-  "fall_notes": "Fall_XXXm is identical to Jump_XXXm up to landing_frame, then a crash: edge catch, face plant, somersault, slides on the back and comes to rest (crash_frame = skis start coming off, rest_frame = skier stopped). Skis and poles detach and are children of the steer node. Swap to the Fall clip before landing_frame to play a crash."
+  "fall_notes": "Fall_XXXm is identical to Jump_XXXm up to landing_frame, then a crash: edge catch, face plant, somersault, slides on the back and comes to rest (crash_frame = skis start coming off, rest_frame = skier stopped). Skis and poles detach and are children of the steer node. Swap to the Fall clip before landing_frame to play a crash.",
+  "accessories": {
+    "file": "character-customization/skier-accessories.glb",
+    "items": [
+      {
+        "name": "backpack",
+        "attach": "insulated jacket torso",
+        "option": "packColor"
+      },
+      {
+        "name": "beard_full",
+        "attach": "head pose",
+        "option": "beard=full"
+      },
+      {
+        "name": "beard_short",
+        "attach": "head pose",
+        "option": "beard=short"
+      },
+      {
+        "name": "earmuffs",
+        "attach": "head pose",
+        "option": "earColor"
+      },
+      {
+        "name": "eyes_dots",
+        "attach": "head pose",
+        "option": "eyes=dots"
+      },
+      {
+        "name": "eyes_happy",
+        "attach": "head pose",
+        "option": "eyes=happy"
+      },
+      {
+        "name": "eyes_wide",
+        "attach": "head pose",
+        "option": "eyes=wide"
+      },
+      {
+        "name": "gear_bobsled",
+        "attach": "blue ski",
+        "option": "gear=bobsled (hide skis, bindings, ski graphics, poles)"
+      },
+      {
+        "name": "gear_snowboard",
+        "attach": "blue ski",
+        "option": "gear=snowboard (hide skis, bindings, ski graphics, poles)"
+      },
+      {
+        "name": "goggles",
+        "attach": "head pose",
+        "option": "gogglesColor"
+      },
+      {
+        "name": "hair_curly",
+        "attach": "head pose",
+        "option": "hairStyle=curly"
+      },
+      {
+        "name": "hair_long",
+        "attach": "head pose",
+        "option": "hairStyle=long"
+      },
+      {
+        "name": "hair_ponytail",
+        "attach": "head pose",
+        "option": "hairStyle=ponytail"
+      },
+      {
+        "name": "hair_short",
+        "attach": "head pose",
+        "option": "hairStyle=short"
+      },
+      {
+        "name": "hat_beanie",
+        "attach": "head pose",
+        "option": "hatStyle=beanie"
+      },
+      {
+        "name": "hat_cap",
+        "attach": "head pose",
+        "option": "hatStyle=cap"
+      },
+      {
+        "name": "mask",
+        "attach": "head pose",
+        "option": "maskColor"
+      },
+      {
+        "name": "mouth_flat",
+        "attach": "head pose",
+        "option": "mouth=flat"
+      },
+      {
+        "name": "mouth_grin",
+        "attach": "head pose",
+        "option": "mouth=grin"
+      },
+      {
+        "name": "mouth_smile",
+        "attach": "head pose",
+        "option": "mouth=smile"
+      },
+      {
+        "name": "pom_large",
+        "attach": "head pose",
+        "option": "pomSize=large (beanie only)"
+      },
+      {
+        "name": "pom_medium",
+        "attach": "head pose",
+        "option": "pomSize=medium (beanie only)"
+      },
+      {
+        "name": "pom_small",
+        "attach": "head pose",
+        "option": "pomSize=small (beanie only)"
+      },
+      {
+        "name": "scarf",
+        "attach": "insulated jacket torso",
+        "option": "scarfColor"
+      },
+      {
+        "name": "shades",
+        "attach": "head pose",
+        "option": "shadesColor"
+      }
+    ],
+    "notes": "Each accessory is modelled in the local space of its attach node: add it as a child of the clip node named '<Clip> | <attach>' (three.js sanitises this to '<Clip>_|_<attach with spaces as underscores>') with an identity transform and it follows every Jump and Fall animation. character-customization/skier-customization.ts does this, plus recolouring and hiding the built-in parts, from the menu's SkierConfig."
+  },
+  "skier_materials": {
+    "recolourable": {
+      "skin": "Sports mascot • warm skin",
+      "hair (built-in fringe)": "Sports mascot • chestnut hair",
+      "helmet": "Skier • helmet ivory",
+      "helmet stripe": "Skier • helmet stripe",
+      "jacket": "Skier • vermilion insulated jacket",
+      "pants": "Skier • midnight navy pants",
+      "boots": "Skier • boots",
+      "gloves": "Skier • gloves",
+      "skis": "Skier • electric blue skis",
+      "ski graphic": "Skier • ski graphic",
+      "bindings": "Skier • bindings",
+      "poles": "Skier • pole shafts"
+    },
+    "face_materials": [
+      "Sports mascot • facial features",
+      "Sports mascot • smile"
+    ],
+    "jacket_torso_uv": "Cylindrical wrap: u = 0.25 chest centre, 0.5 skier left side (+X Blender), 0.75 back; v = 0 bottom to 1 top."
+  }
 }

@@ -6,6 +6,7 @@ import MemorialPage from './pages/MemorialPage'
 import ModelTestPage from './pages/ModelTestPage'
 import SkiJumpPage from './pages/SkiJumpPage'
 import ControllerTestPage from './pages/ControllerTestPage'
+import Menu from './pages/Menu'
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
         <Route path="/model-test" element={<ModelTestPage />} />
         <Route path="/jump" element={<SkiJumpPage />} />
         <Route path="/controller-test/:room" element={<ControllerTestPage />} />
+        <Route path="/customize" element={<Menu />} />
       </Routes>
     </BrowserRouter>
   );

@@ -5,6 +5,8 @@ import ScorePopup from '../components/ScorePopup'
 import { MODELS, DISTANCES, clipFile, fallFile, fixBlenderLights, type Manifest } from '../lib/skiModels'
 import { playApplause, playCountdownBeep, playScoreSound, playWipeoutSound, stopCrowdSounds, syncSlopeSounds } from '../lib/scoreSounds'
 import { createSnowOverlay } from '../lib/snowOverlay'
+import { applySkierConfig, loadSkierAccessories } from '../lib/skierCustomization'
+import { loadSkier } from './Menu'
 import '../styles/ski-jump.css'
 
 // All 41 clips are identical up to takeoff (takeoff_frame 112 in every clip of the manifest),
@@ -107,19 +109,27 @@ export default function SkiJumpPage({ onFinish }: { onFinish?: () => void }) {
     scene.add(new THREE.HemisphereLight(0xffffff, 0x8a8a7a, 1))
 
     const loader = new GLTFLoader()
+    // The player's skier from the customizer (saved in this browser), applied to every clip as it loads.
+    const skier = loadSkier()
+    const accessories = loadSkierAccessories(`${MODELS}/skier-accessories.glb`)
+    const loadSkierClip = (url: string) =>
+      Promise.all([loader.loadAsync(url), accessories]).then(([gltf, acc]) => {
+        applySkierConfig(gltf.scene, acc, skier)
+        return gltf
+      })
     const timer = new THREE.Timer()
     let disposed = false
 
     // Parsed clips, so the takeoff swap is instant once a clip has been fetched.
     const clips = new Map<number, Promise<GLTF>>()
     const getClip = (m: number) => {
-      if (!clips.has(m)) clips.set(m, loader.loadAsync(clipFile(m)))
+      if (!clips.has(m)) clips.set(m, loadSkierClip(clipFile(m)))
       return clips.get(m)!
     }
     // Crash-on-landing versions, fetched at takeoff for the earned distance.
     const falls = new Map<number, GLTF>()
     const getFall = (m: number) => {
-      if (!falls.has(m)) loader.loadAsync(fallFile(m)).then((g) => falls.set(m, g))
+      if (!falls.has(m)) loadSkierClip(fallFile(m)).then((g) => falls.set(m, g))
     }
 
     const landingTimes = new Map<number, number>()
