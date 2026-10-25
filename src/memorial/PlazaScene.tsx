@@ -4,6 +4,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import Loader from '../components/Loader'
 import { fixBlenderLights } from '../lib/skiModels'
 import { createSnowOverlay } from '../lib/snowOverlay'
+import { playBrickLand, startCeremonyMusic, stopCeremonyMusic } from '../lib/ceremonyAudio'
 import type { Brick } from './bricks'
 import { createSkyline } from './skyline'
 
@@ -303,6 +304,7 @@ export default function PlazaScene({ bricks, laying = 0, onLaid }: { bricks: Bri
     const closeUp = { pos: new THREE.Vector3(), target: new THREE.Vector3() }
     const target = new THREE.Vector3()
     const landAt = (i: number) => CEREMONY.HOLD + i * CEREMONY.STAGGER + CEREMONY.DROP
+    let rung = 0 // names whose thud and bell have sounded
 
     // Puts each new name where it is at the current ceremony time: waiting above, dropping, or set.
     function layBricks() {
@@ -321,6 +323,8 @@ export default function PlazaScene({ bricks, laying = 0, onLaid }: { bricks: Bri
         }
       })
       glow.intensity = flare * 3
+      // A thud and a golden bell as each name sets into the pavement.
+      while (ceremonyTime !== null && rung < laid.length && ceremonyTime >= landAt(rung)) playBrickLand(rung++)
       for (const mesh of new Set(laid.map(({ paver }) => paver.mesh))) mesh.instanceColor!.needsUpdate = true
     }
 
@@ -331,6 +335,7 @@ export default function PlazaScene({ bricks, laying = 0, onLaid }: { bricks: Bri
       closeUp.target.divideScalar(laid.length)
       const towardEye = EYE.clone().sub(closeUp.target).setY(0).setLength(0.5)
       closeUp.pos.copy(closeUp.target).add(towardEye).setY(closeUp.target.y + 1.1)
+      startCeremonyMusic()
       let last = performance.now()
       renderer.setAnimationLoop((now) => {
         ceremonyTime! += Math.min((now - last) / 1000, 0.1)
@@ -396,6 +401,7 @@ export default function PlazaScene({ bricks, laying = 0, onLaid }: { bricks: Bri
     return () => {
       disposed = true
       park.pause()
+      stopCeremonyMusic(0.2)
       window.removeEventListener('pointerdown', startPark)
       window.removeEventListener('keydown', startPark)
       renderer.setAnimationLoop(null)

@@ -71,6 +71,56 @@
   justify-content: center;
 }
 
+/* Race-end results over the city view: congratulations and the race's leaderboard. */
+.memorial__results {
+  position: absolute;
+  right: 0;
+  bottom: 110px;
+  left: 0;
+  z-index: 2;
+  width: min(440px, 90vw);
+  margin: 0 auto; /* centred without transform: motion's slide-in sets transform */
+  padding: 18px 22px;
+  text-align: center;
+  background: rgba(16, 26, 51, 0.78);
+  border: 1px solid rgba(255, 210, 122, 0.4);
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+}
+
+.memorial__congrats {
+  margin: 0 0 12px;
+  font-family: 'Exo 2', sans-serif;
+  font-size: clamp(1.4rem, 4vw, 2.2rem);
+  font-weight: 900;
+  font-style: italic;
+  color: #ffd27a;
+}
+
+.memorial__leaderboard {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.memorial__leaderboard li {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 6px 0;
+  border-top: 1px solid rgba(244, 236, 224, 0.12);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-size: 0.95rem;
+  color: rgba(244, 236, 224, 0.9);
+}
+
+.memorial__leaderboard li:first-child {
+  border-top: none;
+  font-weight: 500;
+  color: #ffd27a;
+}
+
 /* Newspaper clipping */
 .newspaper {
   position: fixed;

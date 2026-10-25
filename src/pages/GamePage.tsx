@@ -6,7 +6,7 @@ import JoinRaceButton from '../components/JoinRaceButton'
 import { MAX_PLAYERS, deleteRoom, startRace, watchPlayers, watchRoom, type Phase, type Player } from '../lib/room'
 import PlazaCeremony from '../memorial/PlazaCeremony'
 import { addBricks, type Brick } from '../memorial/bricks'
-import SkiJumpPage from './SkiJumpPage'
+import SkiJumpPage, { type Result } from './SkiJumpPage'
 import '../styles/game.css'
 
 export default function GamePage() {
@@ -15,6 +15,8 @@ export default function GamePage() {
   const [phase, setPhase] = useState<Phase | null | undefined>(undefined)
   const [players, setPlayers] = useState<Player[]>([])
   const [laid, setLaid] = useState<Brick[] | null>(null)
+  // The race's final standings, shown on the plaza once the names are laid.
+  const [results, setResults] = useState<Result[]>([])
 
   useEffect(() => watchRoom(room, setPhase), [room])
   useEffect(() => watchPlayers(room, setPlayers), [room])
@@ -34,8 +36,9 @@ export default function GamePage() {
   }
 
   // Lays a brick for every racer, then shows the plaza ceremony.
-  const endRace = async () => {
+  const endRace = async (standings: Result[]) => {
     if (players.length === 0) return finish()
+    setResults(standings)
     try {
       setLaid(await addBricks(players.map((player) => player.name)))
     } catch (err) {
@@ -44,7 +47,7 @@ export default function GamePage() {
     }
   }
 
-  if (laid) return <PlazaCeremony laid={laid} onFinish={finish} />
+  if (laid) return <PlazaCeremony laid={laid} results={results} onFinish={finish} />
 
   if (phase === undefined) return <main className="lobby" />
   if (phase === null) {

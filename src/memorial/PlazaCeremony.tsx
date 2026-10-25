@@ -4,11 +4,13 @@ import Logo from '../components/Logo'
 import JoinRaceButton from '../components/JoinRaceButton'
 import PlazaScene from './PlazaScene'
 import { watchBricks, type Brick } from './bricks'
+import type { Result } from '../pages/SkiJumpPage'
 import '../styles/memorial.css'
 
 // After a race: close over the plaza pavement, each racer's name is set into a paver one by one,
-// then the view slowly pulls back out to Olympic Plaza, just as /bricks shows it.
-export default function PlazaCeremony({ laid, onFinish }: { laid: Brick[]; onFinish: () => void }) {
+// then the view slowly pulls back out to Olympic Plaza, just as /bricks shows it, where the racers are
+// congratulated and the race's leaderboard is shown.
+export default function PlazaCeremony({ laid, results = [], onFinish }: { laid: Brick[]; results?: Result[]; onFinish: () => void }) {
   const [bricks, setBricks] = useState<Brick[]>([])
   const [done, setDone] = useState(false)
 
@@ -37,6 +39,27 @@ export default function PlazaCeremony({ laid, onFinish }: { laid: Brick[]; onFin
         <h1 className="memorial__title">Olympic Plaza</h1>
         <p className="memorial__subtitle">Every racer leaves their name in the plaza.</p>
       </motion.div>
+
+      {done && results.length > 0 && (
+        <motion.div
+          className="memorial__results"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4, duration: 0.8 }}
+        >
+          <h2 className="memorial__congrats">Congratulations, {results[0].name}!</h2>
+          <ol className="memorial__leaderboard">
+            {results.map((r, i) => (
+              <li key={i}>
+                <span>
+                  {i + 1}. {r.name}
+                </span>
+                <span>{r.distance === null ? 'Wipeout' : `${r.distance} m`}</span>
+              </li>
+            ))}
+          </ol>
+        </motion.div>
+      )}
 
       {done && (
         <motion.div className="memorial__finish" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1 }}>

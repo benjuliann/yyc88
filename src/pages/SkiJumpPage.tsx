@@ -7,6 +7,7 @@ import ScorePopup from '../components/ScorePopup'
 import { MODELS, DISTANCES, clipFile, fallFile, fixBlenderLights, type Manifest } from '../lib/skiModels'
 import { playApplause, playCountdownBeep, playScoreSound, playWipeoutSound, stopCrowdSounds, syncSlopeSounds } from '../lib/scoreSounds'
 import { createSnowOverlay } from '../lib/snowOverlay'
+import { playAnthem, stopAnthem } from '../lib/ceremonyAudio'
 import { applyGearPose, applySkierConfig, loadSkierAccessories } from '../lib/skierCustomization'
 import { loadSkier, randomOutfit, type SkierConfig } from './CustomizePage'
 import { podiumSpot, putOnPodium, type Place } from '../lib/podium'
@@ -76,7 +77,7 @@ const MAX_TRIES = 2
 
 
 type Phase = 'loading' | 'opening' | 'lineup' | 'ready' | 'countdown' | 'inrun' | 'flight' | 'next' | 'done' | 'crash' | 'fall'
-type Result = { name: string; distance: number | null } // null: wiped out on every try
+export type Result = { name: string; distance: number | null } // null: wiped out on every try
 type Takeoff = { label: string; balance: number; timing: number }
 
 function rateTakeoff(balance: number, pressT: number | null): Takeoff & { distance: number } {
@@ -101,10 +102,10 @@ function landingHalfWidth(profile: [number, number][], z: number) {
   return profile[profile.length - 1][1]
 }
 
-// `onFinish` is set when the jump is part of a race: it's called once the jump is done.
+// `onFinish` is set when the jump is part of a race: it's called with the standings once the jump is done.
 // `contestants` (race only) get an opening ceremony and a lineup, then jump one at a time in join order
 // and are ranked on the podium by distance.
-export default function SkiJumpPage({ onFinish, contestants, room }: { onFinish?: () => void; contestants?: Player[]; room?: string }) {
+export default function SkiJumpPage({ onFinish, contestants, room }: { onFinish?: (standings: Result[]) => void; contestants?: Player[]; room?: string }) {
   // The players at the moment the race started; later joins/leaves don't change the lineup.
   const [lineupPlayers] = useState(() => contestants ?? [])
   const mountRef = useRef<HTMLDivElement>(null)
@@ -128,9 +129,9 @@ export default function SkiJumpPage({ onFinish, contestants, room }: { onFinish?
   useEffect(() => {
     if (phase !== 'done') return
     // After the podium: a race ends (and lays the bricks); a solo jump goes to the memorial bricks.
-    const timeout = setTimeout(() => (onFinish ? onFinish() : navigate('/bricks')), FINISH_DELAY * 1000)
+    const timeout = setTimeout(() => (onFinish ? onFinish(standings) : navigate('/bricks')), FINISH_DELAY * 1000)
     return () => clearTimeout(timeout)
-  }, [phase, onFinish, navigate])
+  }, [phase, onFinish, navigate, standings])
 
   useEffect(() => {
     const mount = mountRef.current!
@@ -312,6 +313,7 @@ export default function SkiJumpPage({ onFinish, contestants, room }: { onFinish?
     const podiumTarget = new THREE.Vector3()
     const pickOne = <T,>(items: readonly T[]) => items[Math.floor(Math.random() * items.length)]
     const endCeremony = () => {
+      stopAnthem()
       ceremony?.skiers.forEach((s) => s.removeFromParent())
       ceremony = null
     }
@@ -341,6 +343,7 @@ export default function SkiJumpPage({ onFinish, contestants, room }: { onFinish?
       podiumSpot(podium, 1).getWorldPosition(podiumTarget)
       podiumTarget.y += 1.2
       setPopup(null) // the podium replaces the distance readout
+      playAnthem()
     }
 
     // --- Race intro: opening flyover, contestant lineup, then the start screen ---
@@ -842,6 +845,7 @@ export default function SkiJumpPage({ onFinish, contestants, room }: { onFinish?
       disposed = true
       syncSlopeSounds('off')
       stopCrowdSounds()
+      stopAnthem()
       renderer.setAnimationLoop(null)
       window.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('keyup', onKeyUp)
