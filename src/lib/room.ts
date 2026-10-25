@@ -13,12 +13,13 @@ import {
   writeBatch,
 } from 'firebase/firestore'
 import { db } from './firebase'
+import type { SkierConfig } from '../pages/CustomizePage'
 
 // No I or O, so codes can't be misread as 1 or 0.
 const LETTERS = 'ABCDEFGHJKLMNPQRSTUVWXYZ'
 
 export type Phase = 'lobby' | 'playing'
-export type Player = { id: string; name: string }
+export type Player = { id: string; name: string; skier?: SkierConfig }
 
 export function isValidRoomCode(code: string) {
   return /^[A-HJ-NP-Z]{4}$/.test(code)
@@ -53,8 +54,19 @@ export async function deleteRoom(code: string) {
   await batch.commit()
 }
 
-export function joinRoom(code: string, playerId: string, name: string) {
-  return setDoc(doc(db, 'rooms', code, 'players', playerId), { name, joinedAt: serverTimestamp() })
+export const MAX_PLAYERS = 5
+
+// Returns false when the room is already full (a player rejoining under their own id still gets in).
+export async function joinRoom(code: string, playerId: string, name: string) {
+  const players = await getDocs(collection(db, 'rooms', code, 'players'))
+  if (players.size >= MAX_PLAYERS && !players.docs.some((player) => player.id === playerId)) return false
+  await setDoc(doc(db, 'rooms', code, 'players', playerId), { name, joinedAt: serverTimestamp() })
+  return true
+}
+
+// Lets the big screen dress this player's skier the way they customized it on their phone.
+export function saveSkier(code: string, playerId: string, skier: SkierConfig) {
+  return updateDoc(doc(db, 'rooms', code, 'players', playerId), { skier })
 }
 
 export function leaveRoom(code: string, playerId: string) {
@@ -66,9 +78,18 @@ export function watchRoom(code: string, onChange: (phase: Phase | null) => void)
   return onSnapshot(doc(db, 'rooms', code), (snap) => onChange(snap.exists() ? snap.data().phase : null))
 }
 
+// Calls back with null when this player isn't in the room.
+export function watchPlayer(code: string, playerId: string, onChange: (player: Player | null) => void) {
+  return onSnapshot(doc(db, 'rooms', code, 'players', playerId), (snap) =>
+    onChange(snap.exists() ? { id: snap.id, name: snap.data().name } : null),
+  )
+}
+
 export function watchPlayers(code: string, onChange: (players: Player[]) => void) {
   const players = query(collection(db, 'rooms', code, 'players'), orderBy('joinedAt'))
-  return onSnapshot(players, (snap) => onChange(snap.docs.map((d) => ({ id: d.id, name: d.data().name }))))
+  return onSnapshot(players, (snap) =>
+    onChange(snap.docs.map((d) => ({ id: d.id, name: d.data().name, skier: d.data().skier }))),
+  )
 }
 
 // Not crypto.randomUUID(): it's missing on plain-HTTP pages, like a phone testing over the LAN.
