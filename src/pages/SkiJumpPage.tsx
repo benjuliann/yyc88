@@ -3,7 +3,7 @@ import * as THREE from 'three'
 import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js'
 import ScorePopup from '../components/ScorePopup'
 import { MODELS, DISTANCES, clipFile, fallFile, fixBlenderLights, type Manifest } from '../lib/skiModels'
-import { playScoreSound, playWipeoutSound } from '../lib/scoreSounds'
+import { playScoreSound, playWipeoutSound, syncSlopeSounds } from '../lib/scoreSounds'
 import { createSnowOverlay } from '../lib/snowOverlay'
 import '../styles/ski-jump.css'
 
@@ -486,6 +486,13 @@ export default function SkiJumpPage() {
         }
       }
 
+      const slope =
+        game.phase === 'inrun' ? 'ski'
+        : game.phase === 'flight' && !game.landed ? 'air'
+        : game.phase === 'flight' && game.landed ? 'ground'
+        : 'off'
+      syncSlopeSounds(slope)
+
       // Snow streams opposite to the skier's motion as seen by the camera (which follows them).
       if (cam) {
         snowVel.copy(game.crashed ? crashVel : velocity).applyQuaternion(cam.getWorldQuaternion(camQ).invert())
@@ -510,6 +517,7 @@ export default function SkiJumpPage() {
 
     return () => {
       disposed = true
+      syncSlopeSounds('off')
       renderer.setAnimationLoop(null)
       window.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('keyup', onKeyUp)

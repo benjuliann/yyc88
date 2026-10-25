@@ -24,3 +24,68 @@ export function playWipeoutSound() {
   wipeout.currentTime = 0
   wipeout.play().catch(() => {})
 }
+
+// Slope beds: ski loop on the in-run and again after the landing clip, wind loop in the air.
+// land.mp3 is the thud cut from the landing effect, starting right at the impact.
+type SlopeBed = 'off' | 'ski' | 'air' | 'ground'
+
+let ski: HTMLAudioElement | null = null
+let wind: HTMLAudioElement | null = null
+let land: HTMLAudioElement | null = null
+let bed: SlopeBed = 'off'
+
+function loop(src: string, volume: number) {
+  const a = new Audio(src)
+  a.loop = true
+  a.volume = volume
+  return a
+}
+
+function halt(a: HTMLAudioElement | null) {
+  if (!a) return
+  a.pause()
+  a.currentTime = 0
+}
+
+function startLoop(a: HTMLAudioElement) {
+  if (!a.paused) return
+  a.currentTime = 0
+  a.play().catch(() => {})
+}
+
+// Create (and start loading) all three up front, so the wind and landing thud aren't late the
+// first time they're needed.
+function preload() {
+  ski ??= loop('/sounds/ski.mp3', 0.55)
+  wind ??= loop('/sounds/wind.ogg', 0.7)
+  if (!land) {
+    land = new Audio('/sounds/land.mp3')
+    land.volume = 0.9
+    land.preload = 'auto'
+    land.load()
+  }
+}
+
+export function syncSlopeSounds(next: SlopeBed) {
+  if (next === bed) return
+  const prev = bed
+  bed = next
+  if (next !== 'off') preload()
+
+  if (next !== 'ski' && next !== 'ground') halt(ski)
+  if (next !== 'air') halt(wind)
+  if (next !== 'ground') halt(land)
+
+  if (next === 'ski') {
+    startLoop(ski!)
+  } else if (next === 'air') {
+    startLoop(wind!)
+  } else if (next === 'ground' && prev === 'air') {
+    halt(ski)
+    land!.onended = () => {
+      if (bed === 'ground') startLoop(ski!)
+    }
+    land!.currentTime = 0
+    land!.play().catch(() => {})
+  }
+}
