@@ -18,6 +18,18 @@
   padding: 0 6%;
 }
 
+.memorial__back {
+  font-size: 0.85rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: rgba(244, 236, 224, 0.75);
+}
+
+.memorial__back:hover {
+  color: #f4ece0;
+}
+
 .memorial__intro {
   margin: 40px 0 0;
   padding: 0 16px;

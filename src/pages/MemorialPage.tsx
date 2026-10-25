@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import Logo from '../components/Logo'
 import PlazaScene from '../memorial/PlazaScene'
 import { watchBricks, type Brick } from '../memorial/bricks'
@@ -15,6 +16,9 @@ const MemorialPage = () => {
 
       <header className="memorial__header">
         <Logo />
+        <Link to="/" className="memorial__back">
+          ← Back
+        </Link>
       </header>
 
       <div className="memorial__intro">

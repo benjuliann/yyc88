@@ -1,16 +1,25 @@
 import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js'
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js'
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js'
+import { Reflector } from 'three/addons/objects/Reflector.js'
 import { fixBlenderLights } from '../lib/skiModels'
 import { createSnowOverlay } from '../lib/snowOverlay'
 import type { Brick } from './bricks'
+import { createSkyline } from './skyline'
 
 const MODEL = '/models/plaza/olympic-plaza-historical.glb'
-// Crouched on the east brick walkway with a phone near the ground, looking across the pavers to the arcade.
-const EYE = new THREE.Vector3(39.4, 0.4, 27)
-const LOOK_AT = new THREE.Vector3(29, 1.6, 6)
-const MAX_ENGRAVED = 160 // the bricks close enough to read; the rest of the plaza stays plain
-const MAX_ENGRAVED_DISTANCE = 7
+// On the east brick walkway, phone held up high (any lower and the terrace edge hides the sunken
+// rink), tilted down over the named pavers toward the frozen pool and the arcade's south end.
+const EYE = new THREE.Vector3(39.4, 2.5, 27)
+const LOOK_AT = new THREE.Vector3(15.3, -4.5, -4.9)
+const FOV = 42 // a little tighter than a phone's lens, so the distant rink and arcade read
+const FILL_LIGHT = new THREE.Vector3(38.5, 3, 24) // just out of frame, so the names nearest the viewer read
+const MAX_ENGRAVED = 300 // the bricks close enough to read; the rest of the plaza stays plain
+const MAX_ENGRAVED_DISTANCE = 10
 const BRICK_HALF_HEIGHT = 0.03 // from the GLB's brick meshes
 const BRICK_SPACING = 0.205 // centre to centre along a row, from the GLB
 // The GLB's pavers stand 7.5 cm proud of the pavement, so their sides show as walls along the
@@ -19,13 +28,30 @@ const BRICK_DROP = 0.07
 const MAX_FILLED_GAP = 3 // missing bricks in a row this short are holes, not where the walkway ends
 const HORIZON = new THREE.Color(0x3a3f86) // violet city glow low in the sky; distant buildings fade into it
 const COLUMN_LIGHT = 0xffb15c // warm amber, like the arcade's uplights on winter nights
-// Extra lamp posts (x, z) along both edges of the walkway and out on the lawn, so the park reads at night.
-const NEW_LAMPS: [number, number][] = [[41.2, 12], [33.4, 3], [24, 16], [14, 6], [41, -6]]
+// Extra lamp posts (x, z) along the walkway, so the park reads at night; none stand between the camera and
+// the rink, or close enough to the arcade to blow it out.
+const NEW_LAMPS: [number, number][] = [[41.2, 12], [41, -6]]
 const LIT_LAMP_DISTANCE = 60 // lamps further away only glow, which keeps the light count phone-friendly
 // String lights scattered over each tree's canopy, in the tree's own space (from the GLB's tree meshes).
 const CANOPY_CENTRE = new THREE.Vector3(0, 5, 0)
 const CANOPY = new THREE.Vector3(2, 2.1, 2)
 const BULBS_PER_TREE = 70
+// Glow around the lamp heads, string lights, uplight fixtures and lit windows; only the brightest pixels bloom.
+const BLOOM_STRENGTH = 0.6
+const BLOOM_RADIUS = 0.2
+const BLOOM_THRESHOLD = 0.92
+const AMBIENCE = '/sounds/park.ogg' // the plaza's ambient bed, kept quiet
+const AMBIENCE_VOLUME = 0.3
+// Settled snow: white lawns, frosted canopies, caps on the arcade, benches and lamps, banks along the paving.
+const SNOW = new THREE.MeshStandardMaterial({ color: 0xf2f6ff, roughness: 0.9 })
+const SNOW_DEPTH = 0.08
+const FROST = new THREE.Color(0xdfe8f5)
+const FROSTED_CANOPY = 0.6 // how far the foliage is blended toward white
+const BANK_EVERY_ROWS = 2 // brick rows are 10.5 cm apart; overlapping mounds every other row read as one ridge
+const BANK_OFFSET = 0.3 // from the last brick's centre out onto the lawn
+// The pool basin frozen into a rink: a soft reflection under a thin frosted layer.
+const RINK_SIZE = 37 // the basin's footprint in the GLB
+const ICE = new THREE.MeshStandardMaterial({ color: 0xe6f0fa, roughness: 0.25, transparent: true, opacity: 0.5 })
 
 // The page's night blue overhead, brightening to the horizon glow, so trees and buildings stand out against it.
 function twilight() {
@@ -45,7 +71,10 @@ function twilight() {
 }
 // "Historical brick tone 2": light enough for dark lettering to read on every engraved brick.
 const ENGRAVED_TONE = new THREE.Color(0.45, 0.29, 0.22)
-const PLATE = new THREE.PlaneGeometry(0.188, 0.094).rotateX(-Math.PI / 2) // text reads away from the viewer
+// Text reads away from the viewer: its top points north, or south when the camera faces south.
+const PLATE = new THREE.PlaneGeometry(0.188, 0.094)
+  .rotateX(-Math.PI / 2)
+  .rotateY(LOOK_AT.z > EYE.z ? Math.PI : 0)
 
 type Paver = { position: THREE.Vector3; mesh: THREE.InstancedMesh; index: number }
 
@@ -95,7 +124,7 @@ export default function PlazaScene({ bricks }: { bricks: Brick[] }) {
   useEffect(() => {
     const mount = mountRef.current!
     const renderer = new THREE.WebGLRenderer({ antialias: true })
-    renderer.setPixelRatio(window.devicePixelRatio)
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)) // capped so phones keep up with the bloom pass
     renderer.setSize(mount.clientWidth, mount.clientHeight)
     mount.appendChild(renderer.domElement)
 
@@ -105,11 +134,22 @@ export default function PlazaScene({ bricks }: { bricks: Brick[] }) {
     scene.fog = new THREE.Fog(HORIZON, 30, 160)
     scene.add(new THREE.HemisphereLight(0x5a6c9c, 0x1a1a22, 0.6))
 
-    const camera = new THREE.PerspectiveCamera(50, mount.clientWidth / mount.clientHeight, 0.05, 1000)
+    const camera = new THREE.PerspectiveCamera(FOV, mount.clientWidth / mount.clientHeight, 0.05, 2000)
     camera.position.copy(EYE)
     camera.lookAt(LOOK_AT)
 
-    const render = () => renderer.render(scene, camera)
+    const composer = new EffectComposer(renderer)
+    const bloom = new UnrealBloomPass(
+      new THREE.Vector2(mount.clientWidth, mount.clientHeight),
+      BLOOM_STRENGTH,
+      BLOOM_RADIUS,
+      BLOOM_THRESHOLD,
+    )
+    composer.addPass(new RenderPass(scene, camera))
+    composer.addPass(bloom)
+    composer.addPass(new OutputPass())
+    // Nothing in the 3D scene moves, so it is only redrawn when something changes (names, size).
+    const render = () => composer.render()
     const anisotropy = renderer.capabilities.getMaxAnisotropy()
     const materials = new Map<string, THREE.MeshStandardMaterial>()
     const plates = new THREE.Group()
@@ -154,6 +194,9 @@ export default function PlazaScene({ bricks }: { bricks: Brick[] }) {
       const lampParts: THREE.Object3D[] = []
       const plinths: THREE.Mesh[] = []
       const trees: THREE.Object3D[] = []
+      const capped: THREE.Mesh[] = []
+      let basin: THREE.Mesh | undefined
+      const frosted = new Map<THREE.Material, THREE.MeshStandardMaterial>()
       const litWindow = new THREE.MeshBasicMaterial({ color: 0xd9b57a })
       gltf.scene.traverse((o) => {
         // The Blender sun becomes moonlight.
@@ -174,7 +217,48 @@ export default function PlazaScene({ bricks }: { bricks: Brick[] }) {
         if (o.name.startsWith('Arcade_•_column_plinth')) plinths.push(o)
         // Lights on in about a third of the office windows.
         if (o.name.includes('window') && Math.random() < 0.35) o.material = litWindow
+        const material = o.material as THREE.MeshStandardMaterial
+        if (material.name === 'Grass') o.material = SNOW
+        if (material.name.startsWith('Foliage')) {
+          if (!frosted.has(material)) {
+            const frost = material.clone()
+            frost.color.lerp(FROST, FROSTED_CANOPY)
+            frosted.set(material, frost)
+          }
+          o.material = frosted.get(material)!
+        }
+        if (/^(Arcade_•_(continuous|return)_entablature|Arcade_kiosk_•_wall|Bench_•_seat_slat|Plaza_light_cap)/.test(o.name)) {
+          capped.push(o)
+        }
+        if (o.name === 'Central_original_pool_and_Odeon_floor') basin = o
       })
+      // A slab of snow on top of each, the size of its footprint.
+      const slab = new THREE.BoxGeometry(1, 1, 1)
+      for (const mesh of capped) {
+        const box = new THREE.Box3().setFromBufferAttribute(mesh.geometry.getAttribute('position') as THREE.BufferAttribute)
+        const size = box.getSize(new THREE.Vector3())
+        const cap = new THREE.Mesh(slab, SNOW)
+        cap.scale.set(size.x + 0.04, SNOW_DEPTH, size.z + 0.04)
+        cap.position.set((box.min.x + box.max.x) / 2, box.max.y + SNOW_DEPTH / 2, (box.min.z + box.max.z) / 2)
+        mesh.add(cap)
+      }
+      // The rink: the reflection sits on the basin floor, with the frosted ice just above it.
+      if (basin) {
+        const floor = basin.position.y + 0.16
+        const flat = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2)
+        const reflection = new Reflector(new THREE.PlaneGeometry(RINK_SIZE, RINK_SIZE), {
+          color: 0xc0d0e8,
+          textureWidth: 512,
+          textureHeight: 512,
+        })
+        const ice = new THREE.Mesh(new THREE.PlaneGeometry(RINK_SIZE, RINK_SIZE), ICE)
+        reflection.quaternion.copy(basin.quaternion).multiply(flat)
+        ice.quaternion.copy(reflection.quaternion)
+        reflection.position.copy(basin.position).setY(floor)
+        ice.position.copy(basin.position).setY(floor + 0.01)
+        scene.add(reflection, ice)
+      }
+      scene.add(createSkyline())
       for (const [x, z] of NEW_LAMPS) {
         for (const part of lampParts) {
           const copy = part.clone()
@@ -222,7 +306,7 @@ export default function PlazaScene({ bricks }: { bricks: Brick[] }) {
       }
       // A lamp just out of frame, so the names nearest the viewer read at night.
       const nearby = new THREE.PointLight(0xffd29a, 30)
-      nearby.position.set(38.5, 3, 24)
+      nearby.position.copy(FILL_LIGHT)
       scene.add(...lamps, nearby)
 
       // ~45k brick nodes share six meshes; draw each mesh once, instanced, instead of 45k draw calls.
@@ -239,12 +323,21 @@ export default function PlazaScene({ bricks }: { bricks: Brick[] }) {
         if (!byGeometry.has(mesh.geometry)) byGeometry.set(mesh.geometry, { material: mesh.material as THREE.Material, positions: [] })
         byGeometry.get(mesh.geometry)!.positions.push(position.setY(position.y - BRICK_DROP))
       }
-      for (const row of rows.values()) {
+      const banks: THREE.Vector3[] = []
+      for (const [key, row] of rows) {
         row.sort((a, b) => a.column - b.column)
+        const banked = Number(key) % BANK_EVERY_ROWS === 0
         row.forEach(({ column, mesh }, i) => {
           lay(mesh, mesh.position.clone())
           // Fill holes in the paving with copies of the brick to their left.
           const gap = i + 1 < row.length ? row[i + 1].column - column - 1 : 0
+          // Snow shovelled off the paving piles up just past both ends of each stretch of bricks.
+          if (banked && (i === 0 || column - row[i - 1].column - 1 > MAX_FILLED_GAP)) {
+            banks.push(mesh.position.clone().setX(mesh.position.x - BANK_OFFSET).setY(0))
+          }
+          if (banked && (i + 1 === row.length || gap > MAX_FILLED_GAP)) {
+            banks.push(mesh.position.clone().setX(mesh.position.x + BANK_OFFSET).setY(0))
+          }
           if (gap > MAX_FILLED_GAP) return
           for (let k = 1; k <= gap; k++) lay(mesh, mesh.position.clone().setX(mesh.position.x + k * BRICK_SPACING))
         })
@@ -259,11 +352,16 @@ export default function PlazaScene({ bricks }: { bricks: Brick[] }) {
         })
         scene.add(instanced)
       }
-      scene.add(gltf.scene)
+      const bank = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 10, 6), SNOW, banks.length)
+      banks.forEach((position, index) => {
+        matrix.makeScale(0.25 + Math.random() * 0.1, 0.06 + Math.random() * 0.05, 0.22).setPosition(position)
+        bank.setMatrixAt(index, matrix)
+      })
+      scene.add(bank, gltf.scene)
       document.fonts.ready.then(() => !disposed && engraveRef.current())
     })
 
-    // Snow drifts down over the still plaza; the 3D scene itself only redraws when something changes.
+    // Snow drifts down over the still plaza; it is a 2D overlay, so the 3D scene isn't redrawn for it.
     const snow = createSnowOverlay(mount)
     const still = { x: 0, y: 0, z: 0 }
     let last = performance.now()
@@ -273,8 +371,41 @@ export default function PlazaScene({ bricks }: { bricks: Brick[] }) {
       frame = requestAnimationFrame(fall)
     })
 
+    // The park ambience fades in as soon as the browser allows sound: right away if the visitor has already
+    // interacted with the site, otherwise on their first tap or key press here.
+    const ambience = new Audio(AMBIENCE)
+    ambience.loop = true
+    ambience.volume = 0
+    let fadeFrame = 0
+    const fade = (to: number, ms: number, done?: () => void) => {
+      cancelAnimationFrame(fadeFrame)
+      const from = ambience.volume
+      const start = performance.now()
+      fadeFrame = requestAnimationFrame(function step(now) {
+        const t = Math.min((now - start) / ms, 1)
+        ambience.volume = from + (to - from) * t
+        if (t < 1) fadeFrame = requestAnimationFrame(step)
+        else done?.()
+      })
+    }
+    const listen = () => {
+      ambience
+        .play()
+        .then(() => {
+          if (disposed) return ambience.pause()
+          window.removeEventListener('pointerdown', listen)
+          window.removeEventListener('keydown', listen)
+          fade(AMBIENCE_VOLUME, 3000)
+        })
+        .catch(() => {})
+    }
+    listen()
+    window.addEventListener('pointerdown', listen)
+    window.addEventListener('keydown', listen)
+
     const onResize = () => {
       renderer.setSize(mount.clientWidth, mount.clientHeight)
+      composer.setSize(mount.clientWidth, mount.clientHeight)
       snow.resize()
       camera.aspect = mount.clientWidth / mount.clientHeight
       camera.updateProjectionMatrix()
@@ -287,10 +418,19 @@ export default function PlazaScene({ bricks }: { bricks: Brick[] }) {
       cancelAnimationFrame(frame)
       snow.dispose()
       window.removeEventListener('resize', onResize)
+      window.removeEventListener('pointerdown', listen)
+      window.removeEventListener('keydown', listen)
+      fade(0, 800, () => {
+        ambience.pause()
+        ambience.removeAttribute('src')
+        ambience.load()
+      })
       for (const material of materials.values()) {
         material.map?.dispose()
         material.dispose()
       }
+      bloom.dispose()
+      composer.dispose()
       renderer.dispose()
       mount.removeChild(renderer.domElement)
     }
