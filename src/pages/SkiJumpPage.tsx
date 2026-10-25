@@ -30,6 +30,8 @@ const GUST = 5
 const WIND = 0.6
 const WIND_CHANGE = 2 // seconds before the crosswind picks a new side and strength
 const PUSH = 6
+// Phone tilt is twitchier than a held arrow key, so it steers at this fraction of the keys' strength.
+const PHONE_STEER = 0.6
 const DAMPING = 0.97
 
 // Timing: pressing this many seconds early (or not at all) scores zero.
@@ -690,7 +692,7 @@ export default function SkiJumpPage({ onFinish, contestants, room }: { onFinish?
       const dt = Math.min(timer.getDelta(), 0.1)
       cam?.position.sub(camOffset)
       mixer?.update(dt)
-      const phonePush = game.phase === 'inrun' ? phoneTilt : 0
+      const phonePush = game.phase === 'inrun' ? phoneTilt * PHONE_STEER : 0
       const push = THREE.MathUtils.clamp((game.right ? 1 : 0) - (game.left ? 1 : 0) + phonePush, -1, 1)
       const pos = steer?.parent?.position // trajectory root, world space (top-level node)
 
