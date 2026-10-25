@@ -6,7 +6,7 @@ import { MODELS, DISTANCES, clipFile, fallFile, fixBlenderLights, type Manifest 
 import { playApplause, playCountdownBeep, playScoreSound, playWipeoutSound, stopCrowdSounds, syncSlopeSounds } from '../lib/scoreSounds'
 import { createSnowOverlay } from '../lib/snowOverlay'
 import { applySkierConfig, loadSkierAccessories } from '../lib/skierCustomization'
-import { loadSkier } from './Menu'
+import { loadSkier } from './CustomizePage'
 import '../styles/ski-jump.css'
 
 // All 41 clips are identical up to takeoff (takeoff_frame 112 in every clip of the manifest),
