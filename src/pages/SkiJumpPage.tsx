@@ -7,7 +7,7 @@ import { MODELS, DISTANCES, clipFile, fallFile, fixBlenderLights, type Manifest 
 import { playApplause, playCountdownBeep, playScoreSound, playWipeoutSound, stopCrowdSounds, syncSlopeSounds } from '../lib/scoreSounds'
 import { createSnowOverlay } from '../lib/snowOverlay'
 import { applySkierConfig, loadSkierAccessories } from '../lib/skierCustomization'
-import { loadSkier, randomOutfit, type SkierConfig } from './Menu'
+import { loadSkier, randomOutfit, type SkierConfig } from './CustomizePage'
 import { podiumSpot, putOnPodium, type Place } from '../lib/podium'
 import '../styles/ski-jump.css'
 

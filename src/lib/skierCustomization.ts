@@ -9,7 +9,7 @@
 // (head, torso, ski), so they follow every Jump and Fall animation with no extra work.
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
-import type { SkierConfig } from '../pages/Menu'
+import type { SkierConfig } from '../pages/CustomizePage'
 
 // Material names in the clip GLBs.
 const M = {

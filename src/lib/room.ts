@@ -66,6 +66,13 @@ export function watchRoom(code: string, onChange: (phase: Phase | null) => void)
   return onSnapshot(doc(db, 'rooms', code), (snap) => onChange(snap.exists() ? snap.data().phase : null))
 }
 
+// Calls back with null when this player isn't in the room.
+export function watchPlayer(code: string, playerId: string, onChange: (player: Player | null) => void) {
+  return onSnapshot(doc(db, 'rooms', code, 'players', playerId), (snap) =>
+    onChange(snap.exists() ? { id: snap.id, name: snap.data().name } : null),
+  )
+}
+
 export function watchPlayers(code: string, onChange: (players: Player[]) => void) {
   const players = query(collection(db, 'rooms', code, 'players'), orderBy('joinedAt'))
   return onSnapshot(players, (snap) => onChange(snap.docs.map((d) => ({ id: d.id, name: d.data().name }))))
