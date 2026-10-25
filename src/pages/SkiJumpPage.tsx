@@ -3,7 +3,7 @@ import * as THREE from 'three'
 import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js'
 import ScorePopup from '../components/ScorePopup'
 import { MODELS, DISTANCES, clipFile, fallFile, fixBlenderLights, type Manifest } from '../lib/skiModels'
-import { playScoreSound, playWipeoutSound } from '../lib/scoreSounds'
+import { playApplause, playCountdownBeep, playScoreSound, playWipeoutSound, stopCrowdSounds, syncSlopeSounds } from '../lib/scoreSounds'
 import { createSnowOverlay } from '../lib/snowOverlay'
 import '../styles/ski-jump.css'
 
@@ -241,6 +241,8 @@ export default function SkiJumpPage({ onFinish }: { onFinish?: () => void }) {
       setTakeoff(null)
       setPopup(null)
       setCount(String(COUNTDOWN))
+      stopCrowdSounds()
+      playCountdownBeep()
       setPhase('countdown')
       play(inrun, 0)
       action!.paused = true
@@ -415,7 +417,10 @@ export default function SkiJumpPage({ onFinish }: { onFinish?: () => void }) {
         game.countdownTime += dt
         const left = Math.ceil(COUNTDOWN - game.countdownTime)
         if (game.countdownTime >= COUNTDOWN) go()
-        else if (left !== before) setCount(String(left))
+        else if (left !== before) {
+          setCount(String(left))
+          playCountdownBeep()
+        }
       }
 
       if (game.phase === 'inrun' && action) {
@@ -492,9 +497,17 @@ export default function SkiJumpPage({ onFinish }: { onFinish?: () => void }) {
             game.landed = true
             setPopup({ distance: game.distance, id: performance.now() })
             playScoreSound(game.distance)
+            playApplause()
           }
         }
       }
+
+      const slope =
+        game.phase === 'inrun' ? 'ski'
+        : game.phase === 'flight' && !game.landed ? 'air'
+        : game.phase === 'flight' && game.landed ? 'ground'
+        : 'off'
+      syncSlopeSounds(slope)
 
       // Snow streams opposite to the skier's motion as seen by the camera (which follows them).
       if (cam) {
@@ -520,6 +533,8 @@ export default function SkiJumpPage({ onFinish }: { onFinish?: () => void }) {
 
     return () => {
       disposed = true
+      syncSlopeSounds('off')
+      stopCrowdSounds()
       renderer.setAnimationLoop(null)
       window.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('keyup', onKeyUp)
