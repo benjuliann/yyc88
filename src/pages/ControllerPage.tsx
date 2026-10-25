@@ -4,8 +4,8 @@ import Logo from '../components/Logo'
 import JoinRaceButton from '../components/JoinRaceButton'
 import TiltPad from '../components/TiltPad'
 import RotatePhone from '../components/RotatePhone'
-import { getPlayerId, isValidRoomCode, joinRoom, leaveRoom, watchPlayer, watchRoom, type Phase, type Player } from '../lib/room'
-import CustomizePage from './CustomizePage'
+import { getPlayerId, isValidRoomCode, joinRoom, leaveRoom, saveSkier, watchPlayer, watchRoom, type Phase, type Player } from '../lib/room'
+import CustomizePage, { type SkierConfig } from './CustomizePage'
 import '../styles/controller.css'
 
 export default function Controller() {
@@ -139,5 +139,10 @@ export function CustomizeSkier() {
 
   if (phase === undefined || me === undefined) return null
   if (phase !== 'lobby' || !me) return <Navigate to={`/play/${room}`} replace />
-  return <CustomizePage name={me.name} submitLabel="Done" onSubmit={() => navigate(`/play/${room}`)} />
+  const done = (skier: SkierConfig) => {
+    // Shared with the big screen for the race lineup; the phone moves on either way.
+    saveSkier(room, getPlayerId(), skier).catch((err) => console.error(err))
+    navigate(`/play/${room}`)
+  }
+  return <CustomizePage name={me.name} submitLabel="Done" onSubmit={done} />
 }

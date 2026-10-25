@@ -9,6 +9,7 @@ import { createSnowOverlay } from '../lib/snowOverlay'
 import { applySkierConfig, loadSkierAccessories } from '../lib/skierCustomization'
 import { loadSkier, randomOutfit, type SkierConfig } from './CustomizePage'
 import { podiumSpot, putOnPodium, type Place } from '../lib/podium'
+import type { Player } from '../lib/room'
 import '../styles/ski-jump.css'
 
 // All 41 clips are identical up to takeoff (takeoff_frame 112 in every clip of the manifest),
@@ -50,11 +51,18 @@ const COUNTDOWN = 3
 const PAN_START = 0.4
 const PAN_END = 2.8
 
+// Race intro: the opening flyover (seconds), then the contestant lineup in front of the podium:
+// seconds per contestant as the camera tracks along, spacing (m) and the line's distance downhill.
+const OPENING_TIME = 5
+const LINEUP_PER = 1.6
+const LINEUP_SPACING = 3
+const LINEUP_Z = 356
+
 // Seconds the podium shows after a clean jump before moving on (race end, or the bricks page).
 const FINISH_DELAY = 5
 
 
-type Phase = 'loading' | 'ready' | 'countdown' | 'inrun' | 'flight' | 'done' | 'crash' | 'fall'
+type Phase = 'loading' | 'opening' | 'lineup' | 'ready' | 'countdown' | 'inrun' | 'flight' | 'done' | 'crash' | 'fall'
 type Takeoff = { label: string; balance: number; timing: number }
 
 function rateTakeoff(balance: number, pressT: number | null): Takeoff & { distance: number } {
@@ -80,11 +88,15 @@ function landingHalfWidth(profile: [number, number][], z: number) {
 }
 
 // `onFinish` is set when the jump is part of a race: it's called once the jump is done.
-export default function SkiJumpPage({ onFinish }: { onFinish?: () => void }) {
+// `contestants` (race only) get an opening ceremony and a lineup before the start.
+export default function SkiJumpPage({ onFinish, contestants }: { onFinish?: () => void; contestants?: Player[] }) {
+  // The players at the moment the race started; later joins/leaves don't change the lineup.
+  const [lineupPlayers] = useState(() => contestants ?? [])
   const mountRef = useRef<HTMLDivElement>(null)
   const needleRef = useRef<HTMLDivElement>(null)
   const lipFillRef = useRef<HTMLDivElement>(null)
   const [phase, setPhase] = useState<Phase>('loading')
+  const [lineupName, setLineupName] = useState<{ name: string; index: number; total: number } | null>(null)
   const [takeoff, setTakeoff] = useState<Takeoff | null>(null)
   const [popup, setPopup] = useState<{ distance: number; id: number } | null>(null)
   // Why the skier wiped out (shown under WIPEOUT!), or null.
@@ -170,6 +182,7 @@ export default function SkiJumpPage({ onFinish }: { onFinish?: () => void }) {
           hasOverview = true
         }
         toGate(inrun)
+        if (lineupPlayers.length) beginOpening()
         // Warm the rest in the background, one at a time.
         DISTANCES.reduce((p, m) => p.then(() => (disposed ? undefined : getClip(m).then(() => undefined))), Promise.resolve())
         getFall(INRUN_CLIP) // used for rail wipeouts on the in-run
@@ -256,6 +269,98 @@ export default function SkiJumpPage({ onFinish }: { onFinish?: () => void }) {
       podiumSpot(podium, 1).getWorldPosition(podiumTarget)
       podiumTarget.y += 1.2
       setPopup(null) // the podium replaces the distance readout
+    }
+
+    // --- Race intro: opening flyover, contestant lineup, then the start screen ---
+    const lookQuat = (from: THREE.Vector3, to: THREE.Vector3) =>
+      new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().lookAt(from, to, new THREE.Vector3(0, 1, 0)))
+    // The flyover ends low in the finish area, looking back up at the jumps.
+    const flyPos = new THREE.Vector3(80, 40, 430)
+    const flyQuat = lookQuat(flyPos, new THREE.Vector3(45, 90, 60))
+    let introTime = 0
+    let lineup: { scene: THREE.Object3D; mixer: THREE.AnimationMixer; x: number; y: number }[] | null = null
+    let lineupStarted = false
+
+    const beginOpening = () => {
+      game.phase = 'opening'
+      introTime = 0
+      setPhase('opening')
+      playApplause()
+      // Dress one standalone skier per contestant while the flyover plays.
+      void (async () => {
+        const acc = await accessories
+        const n = lineupPlayers.length
+        const loaded = await Promise.all(
+          lineupPlayers.map((p) => loader.loadAsync(`${MODELS}/character/skier.glb`).then((g) => ({ g, p }))),
+        )
+        if (disposed) return
+        lineup = loaded.map(({ g, p }, i) => {
+          applySkierConfig(g.scene, acc, p.skier ?? { ...randomOutfit(), name: p.name })
+          const x = 45 + (i - (n - 1) / 2) * LINEUP_SPACING
+          const y = groundY(x, 40, LINEUP_Z) ?? 4
+          g.scene.position.set(x, y, LINEUP_Z)
+          g.scene.rotation.y = Math.PI // face uphill, towards the camera
+          scene.add(g.scene)
+          const mixer = new THREE.AnimationMixer(g.scene)
+          const idle = mixer.clipAction(THREE.AnimationClip.findByName(g.animations, 'Idle')!)
+          idle.play()
+          idle.time = Math.random() * idle.getClip().duration // so they don't breathe in sync
+          return { scene: g.scene, mixer, x, y }
+        })
+      })()
+    }
+
+    const endLineup = () => {
+      lineup?.forEach((c) => c.scene.removeFromParent())
+      lineup = null
+      setLineupName(null)
+      game.phase = 'ready'
+      setPhase('ready')
+    }
+
+    // Camera pose for the intro at the current time (sets introCam); returns false when not in the intro.
+    const lineupFocus = new THREE.Vector3()
+    const trackPos = new THREE.Vector3()
+    const updateIntroCam = (dt: number) => {
+      if (game.phase === 'opening') {
+        introTime += dt
+        const t = THREE.MathUtils.smootherstep(introTime, 0, OPENING_TIME)
+        introCam.position.lerpVectors(introFrom.pos, flyPos, t)
+        introCam.quaternion.slerpQuaternions(introFrom.quat, flyQuat, t)
+        introCam.fov = THREE.MathUtils.lerp(introFrom.fov, 50, t)
+        // Move on once the flyover is done and the contestants are dressed.
+        if (introTime >= OPENING_TIME && lineup && !lineupStarted) {
+          lineupStarted = true
+          introTime = 0
+          game.phase = 'lineup'
+          setPhase('lineup')
+        }
+        return true
+      }
+      if (game.phase === 'lineup' && lineup) {
+        introTime += dt
+        lineup.forEach((c) => c.mixer.update(dt))
+        const n = lineup.length
+        // Glide in from the flyover for 1.2s, then track along the line, then hold on the last one.
+        const glide = 1.2
+        const progress = n > 1 ? THREE.MathUtils.clamp((introTime - glide) / ((n - 1) * LINEUP_PER), 0, 1) : 0
+        const focusX = THREE.MathUtils.lerp(lineup[0].x, lineup[n - 1].x, progress)
+        const index = Math.round(progress * (n - 1))
+        const y = lineup[index].y
+        lineupFocus.set(focusX, y + 1.4, LINEUP_Z)
+        trackPos.set(focusX, y + 2.8, LINEUP_Z - 8)
+        const b = THREE.MathUtils.smootherstep(introTime, 0, glide)
+        introCam.position.lerpVectors(flyPos, trackPos, b)
+        introCam.quaternion.slerpQuaternions(flyQuat, lookQuat(trackPos, lineupFocus), b)
+        introCam.fov = THREE.MathUtils.lerp(50, 45, b)
+        if (introTime >= glide * 0.5) {
+          const name = lineupPlayers[index].name
+          setLineupName((cur) => (cur?.index === index ? cur : { name, index, total: n }))
+        }
+        if (introTime >= glide + (n - 1) * LINEUP_PER + 1.5) endLineup()
+        return true
+      }
+      return false
     }
 
     // Show the skier waiting at the start gate until the player starts.
@@ -577,7 +682,11 @@ export default function SkiJumpPage({ onFinish }: { onFinish?: () => void }) {
         snow.update(dt, snowVel)
       }
 
-      if ((game.phase === 'ready' || game.phase === 'countdown') && hasOverview) {
+      if (updateIntroCam(dt)) {
+        introCam.aspect = mount.clientWidth / mount.clientHeight
+        introCam.updateProjectionMatrix()
+        renderer.render(scene, introCam)
+      } else if ((game.phase === 'ready' || game.phase === 'countdown') && hasOverview) {
         // Wait on the whole-hill overview; during the countdown hold, then ease down to the gate camera.
         const t = game.phase === 'ready' ? 0 : THREE.MathUtils.smootherstep(game.countdownTime, PAN_START, PAN_END)
         introCam.position.lerpVectors(introFrom.pos, introTo.pos, t)
@@ -615,13 +724,29 @@ export default function SkiJumpPage({ onFinish }: { onFinish?: () => void }) {
       snow.dispose()
       mount.removeChild(renderer.domElement)
     }
-  }, [])
+  }, [lineupPlayers])
 
   return (
     <div className="ski-jump">
       <div ref={mountRef} className="ski-jump__canvas" />
 
       {phase === 'loading' && <div className="ski-jump__banner">LOADING…</div>}
+
+      {phase === 'opening' && (
+        <div className="ski-jump__title">
+          <div className="ski-jump__title-main">CALGARY 1988</div>
+          <div className="ski-jump__title-sub">OPENING CEREMONY</div>
+        </div>
+      )}
+
+      {phase === 'lineup' && lineupName && (
+        <div key={lineupName.index} className="ski-jump__title ski-jump__title--lineup">
+          <div className="ski-jump__title-sub">
+            CONTESTANT {lineupName.index + 1} / {lineupName.total}
+          </div>
+          <div className="ski-jump__title-main">{lineupName.name}</div>
+        </div>
+      )}
 
       {count && (phase === 'countdown' || (phase === 'inrun' && count === 'GO!')) && (
         <div key={count} className={`ski-jump__count${count === 'GO!' ? ' ski-jump__count--go' : ''}`}>

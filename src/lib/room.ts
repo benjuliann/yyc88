@@ -13,12 +13,14 @@ import {
   writeBatch,
 } from 'firebase/firestore'
 import { db } from './firebase'
+import type { SkierConfig } from '../pages/CustomizePage'
 
 // No I or O, so codes can't be misread as 1 or 0.
 const LETTERS = 'ABCDEFGHJKLMNPQRSTUVWXYZ'
 
 export type Phase = 'lobby' | 'playing'
-export type Player = { id: string; name: string }
+// `skier` is set once the player customizes on their phone.
+export type Player = { id: string; name: string; skier?: SkierConfig }
 
 export function isValidRoomCode(code: string) {
   return /^[A-HJ-NP-Z]{4}$/.test(code)
@@ -57,6 +59,10 @@ export function joinRoom(code: string, playerId: string, name: string) {
   return setDoc(doc(db, 'rooms', code, 'players', playerId), { name, joinedAt: serverTimestamp() })
 }
 
+export function saveSkier(code: string, playerId: string, skier: SkierConfig) {
+  return updateDoc(doc(db, 'rooms', code, 'players', playerId), { skier })
+}
+
 export function leaveRoom(code: string, playerId: string) {
   return deleteDoc(doc(db, 'rooms', code, 'players', playerId))
 }
@@ -75,7 +81,9 @@ export function watchPlayer(code: string, playerId: string, onChange: (player: P
 
 export function watchPlayers(code: string, onChange: (players: Player[]) => void) {
   const players = query(collection(db, 'rooms', code, 'players'), orderBy('joinedAt'))
-  return onSnapshot(players, (snap) => onChange(snap.docs.map((d) => ({ id: d.id, name: d.data().name }))))
+  return onSnapshot(players, (snap) =>
+    onChange(snap.docs.map((d) => ({ id: d.id, name: d.data().name, skier: d.data().skier }))),
+  )
 }
 
 // Not crypto.randomUUID(): it's missing on plain-HTTP pages, like a phone testing over the LAN.

@@ -34,6 +34,11 @@ service cloud.firestore {
           && request.resource.data.name.size() <= 20
           && request.resource.data.joinedAt == request.time;
 
+        // A player saving their customized skier (shown in the race lineup) changes nothing else.
+        allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['skier'])
+          && request.resource.data.skier is map
+          && request.resource.data.skier.size() <= 30;
+
         allow delete: if true;
       }
     }
