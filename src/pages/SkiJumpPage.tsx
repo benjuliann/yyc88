@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import * as THREE from 'three'
 import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js'
 import ScorePopup from '../components/ScorePopup'
@@ -6,7 +7,8 @@ import { MODELS, DISTANCES, clipFile, fallFile, fixBlenderLights, type Manifest 
 import { playApplause, playCountdownBeep, playScoreSound, playWipeoutSound, stopCrowdSounds, syncSlopeSounds } from '../lib/scoreSounds'
 import { createSnowOverlay } from '../lib/snowOverlay'
 import { applySkierConfig, loadSkierAccessories } from '../lib/skierCustomization'
-import { loadSkier } from './Menu'
+import { loadSkier, randomOutfit, type SkierConfig } from './Menu'
+import { podiumSpot, putOnPodium, type Place } from '../lib/podium'
 import '../styles/ski-jump.css'
 
 // All 41 clips are identical up to takeoff (takeoff_frame 112 in every clip of the manifest),
@@ -48,8 +50,8 @@ const COUNTDOWN = 3
 const PAN_START = 0.4
 const PAN_END = 2.8
 
-// In a race room: seconds to show the score after the jump before the race ends.
-const FINISH_DELAY = 3
+// Seconds the podium shows after a clean jump before moving on (race end, or the bricks page).
+const FINISH_DELAY = 5
 
 
 type Phase = 'loading' | 'ready' | 'countdown' | 'inrun' | 'flight' | 'done' | 'crash' | 'fall'
@@ -89,12 +91,14 @@ export default function SkiJumpPage({ onFinish }: { onFinish?: () => void }) {
   const [crashed, setCrashed] = useState<string | null>(null)
   // "3", "2", "1" during the countdown, then "GO!" as the run starts.
   const [count, setCount] = useState<string | null>(null)
+  const navigate = useNavigate()
 
   useEffect(() => {
-    if (phase !== 'done' || !onFinish) return
-    const timeout = setTimeout(onFinish, FINISH_DELAY * 1000)
+    if (phase !== 'done') return
+    // After the podium: a race ends (and lays the bricks); a solo jump goes to the memorial bricks.
+    const timeout = setTimeout(() => (onFinish ? onFinish() : navigate('/bricks')), FINISH_DELAY * 1000)
     return () => clearTimeout(timeout)
-  }, [phase, onFinish])
+  }, [phase, onFinish, navigate])
 
   useEffect(() => {
     const mount = mountRef.current!
@@ -149,6 +153,13 @@ export default function SkiJumpPage({ onFinish }: { onFinish?: () => void }) {
         fixBlenderLights(env.scene)
         scene.add(env.scene)
         envRoot = env.scene
+        // The podium stands in the finish area, in the same world coordinates as the hill.
+        loader.loadAsync(`${MODELS}/podium.glb`).then((g) => {
+          if (disposed) return
+          fixBlenderLights(g.scene)
+          scene.add(g.scene)
+          podium = g.scene
+        })
         // The environment's "Entire ski hill overview" camera is where the intro starts.
         const overview = env.cameras[0] as THREE.PerspectiveCamera | undefined
         if (overview) {
@@ -205,11 +216,51 @@ export default function SkiJumpPage({ onFinish }: { onFinish?: () => void }) {
         if (game.phase !== 'flight') return
         game.phase = 'done'
         setPhase('done')
+        startCeremony()
       })
+    }
+
+    // After a clean landing: the player's skier on gold, two random rivals on silver and bronze,
+    // each doing a looping cheer, filmed by a camera that slowly pushes in on the podium.
+    let podium: THREE.Object3D | null = null
+    let ceremony: { skiers: THREE.Object3D[]; mixers: THREE.AnimationMixer[]; time: number } | null = null
+    const podiumCam = new THREE.PerspectiveCamera(40, 1, 0.3, 5000)
+    const podiumTarget = new THREE.Vector3()
+    const pickOne = <T,>(items: readonly T[]) => items[Math.floor(Math.random() * items.length)]
+    const endCeremony = () => {
+      ceremony?.skiers.forEach((s) => s.removeFromParent())
+      ceremony = null
+    }
+    const startCeremony = async () => {
+      if (!podium) return
+      const acc = await accessories
+      // Cheer clips have no skis, so the snowboard/bobsled options have nothing to attach to.
+      const cheer = (place: Place, name: string, config: SkierConfig) =>
+        loader.loadAsync(`${MODELS}/cheers/Cheer_${name}.glb`).then((g) => {
+          applySkierConfig(g.scene, acc, { ...config, gear: 'skis' })
+          return { place, gltf: g }
+        })
+      const rival = (): SkierConfig => ({ ...randomOutfit(), name: 'Rival' })
+      const placed = await Promise.all([
+        cheer(1, pickOne(['ArmsUp', 'Jump', 'Wave', 'FistPump']), skier),
+        cheer(2, 'Clap', rival()),
+        cheer(3, pickOne(['Clap', 'Wave']), rival()),
+      ])
+      if (disposed || game.phase !== 'done' || !podium) return
+      endCeremony()
+      ceremony = {
+        skiers: placed.map((p) => p.gltf.scene),
+        mixers: placed.map((p) => putOnPodium(podium!, p.place, p.gltf)),
+        time: 0,
+      }
+      podiumSpot(podium, 1).getWorldPosition(podiumTarget)
+      podiumTarget.y += 1.2
+      setPopup(null) // the podium replaces the distance readout
     }
 
     // Show the skier waiting at the start gate until the player starts.
     const toGate = (inrun: GLTF) => {
+      endCeremony()
       Object.assign(game, { phase: 'ready', crashed: false, slide: 0, lean: 0, balance: 0 })
       resetVelocity = true // the skier teleports back to the gate
       play(inrun, 0)
@@ -245,6 +296,7 @@ export default function SkiJumpPage({ onFinish }: { onFinish?: () => void }) {
 
     // ↑ at the gate (or after a jump): reset to the gate, then count down while the camera sweeps in.
     const start = async () => {
+      endCeremony()
       const inrun = await getClip(INRUN_CLIP)
       if (disposed) return
       Object.assign(game, { phase: 'countdown', countdownTime: 0, balance: 0, velocity: 0, balanceSum: 0, balanceTime: 0, pressT: null, landed: false, slide: 0, lean: 0 })
@@ -355,7 +407,7 @@ export default function SkiJumpPage({ onFinish }: { onFinish?: () => void }) {
       if (e.key === 'ArrowLeft') game.left = down
       if (e.key === 'ArrowRight') game.right = down
       if (!down || e.repeat || (e.key !== 'ArrowUp' && e.key !== ' ')) return
-      if (game.phase === 'ready' || game.phase === 'done') start()
+      if (game.phase === 'ready') start()
       else if (game.phase === 'inrun' && game.pressT === null) game.pressT = action!.time
     }
     const onKeyDown = (e: KeyboardEvent) => onKey(e, true)
@@ -446,11 +498,11 @@ export default function SkiJumpPage({ onFinish }: { onFinish?: () => void }) {
         game.slide = game.balance * inrunLimit
         if (hitSide) edgeWipeout(INRUN_CLIP)
         else if (action.time >= TAKEOFF_T) takeOff()
-      } else if ((game.phase === 'flight' || game.phase === 'done') && pos) {
+      } else if (game.phase === 'flight' && pos) {
         const limit = landingHalfWidth(landingProfile, pos.z) - SKIER_HALF_WIDTH
         game.slide += push * AIR_STEER * dt
         // On the ground (after landing) the edge of the hill is a wipeout; in the air it just stops you.
-        const onGround = game.phase === 'done' || game.landed
+        const onGround = game.landed
         if (onGround && Math.abs(game.slide) >= limit) edgeWipeout(game.distance)
         else game.slide = THREE.MathUtils.clamp(game.slide, -limit, limit)
       }
@@ -487,7 +539,7 @@ export default function SkiJumpPage({ onFinish }: { onFinish?: () => void }) {
           resetVelocity = false
           camRight.setFromMatrixColumn(cam.matrixWorld, 0)
           screenSign = Math.sign(camRight.x) || 1
-          const steering = game.phase === 'inrun' || game.phase === 'flight' || game.phase === 'done'
+          const steering = game.phase === 'inrun' || game.phase === 'flight'
           game.lean = THREE.MathUtils.damp(game.lean, steering ? push * LEAN : 0, 8, dt)
           steer.position.set(game.slide * screenSign, 0, 0)
           steer.rotation.set(0, 0, -game.lean * screenSign)
@@ -534,6 +586,16 @@ export default function SkiJumpPage({ onFinish }: { onFinish?: () => void }) {
         introCam.aspect = mount.clientWidth / mount.clientHeight
         introCam.updateProjectionMatrix()
         renderer.render(scene, introCam)
+      } else if (ceremony && game.phase === 'done') {
+        // The podium faces uphill (-Z), so film it from that side, pushing in over 4s.
+        ceremony.time += dt
+        ceremony.mixers.forEach((m) => m.update(dt))
+        const dist = THREE.MathUtils.lerp(14, 9, THREE.MathUtils.smootherstep(ceremony.time, 0, 4))
+        podiumCam.position.set(podiumTarget.x, podiumTarget.y + 1.5, podiumTarget.z - dist)
+        podiumCam.lookAt(podiumTarget)
+        podiumCam.aspect = mount.clientWidth / mount.clientHeight
+        podiumCam.updateProjectionMatrix()
+        renderer.render(scene, podiumCam)
       } else if (cam) {
         cam.aspect = mount.clientWidth / mount.clientHeight
         cam.updateProjectionMatrix()
@@ -574,9 +636,9 @@ export default function SkiJumpPage({ onFinish }: { onFinish?: () => void }) {
         </div>
       )}
 
-      {(phase === 'ready' || (phase === 'done' && !onFinish)) && (
+      {phase === 'ready' && (
         <div className="ski-jump__banner ski-jump__banner--bottom">
-          <div className="ski-jump__blink">PRESS ↑ TO {phase === 'done' ? 'JUMP AGAIN' : 'JUMP'}</div>
+          <div className="ski-jump__blink">PRESS ↑ TO JUMP</div>
           <div className="ski-jump__help">&lt; &gt; BALANCE &nbsp;&nbsp; ↑ TAKE OFF AT THE LIP &nbsp;&nbsp; LET GO TO LAND</div>
         </div>
       )}

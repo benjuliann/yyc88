@@ -136,7 +136,7 @@ const ANIMALS = [
 ];
 const randomName = () => `${pick(ADJECTIVES)} ${pick(ANIMALS)}`;
 
-const randomOutfit = (): Omit<SkierConfig, "name"> => ({
+export const randomOutfit = (): Omit<SkierConfig, "name"> => ({
   gear: pick<Gear>(["skis", "snowboard", "bobsled"]),
   gearColor: randColor(),
   hatStyle: pick<HatStyle>(["none", "beanie", "cap", "helmet"]),

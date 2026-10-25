@@ -1106,5 +1106,66 @@
       "Sports mascot • smile"
     ],
     "jacket_torso_uv": "Cylindrical wrap: u = 0.25 chest centre, 0.5 skier left side (+X Blender), 0.75 back; v = 0 bottom to 1 top."
+  },
+  "podium": {
+    "file": "podium-and-cheers/podium.glb",
+    "root_world": [
+      45,
+      3.698,
+      368
+    ],
+    "spots_world": {
+      "1": [
+        45,
+        5.086,
+        368
+      ],
+      "2": [
+        47.312,
+        4.711,
+        368
+      ],
+      "3": [
+        42.688,
+        4.398,
+        368
+      ]
+    },
+    "notes": "World coordinates match the environment (finish area of the large hill, glTF x=45, z=368). The front faces glTF -Z (uphill, towards arriving skiers). Nodes 'Podium | spot_1..3' (three.js: 'Podium_|_spot_N') sit on each step top and are rotated so a Cheer clip added as a child with an identity transform faces the front. 2nd place is on the winner's right. See podium-and-cheers/podium.ts."
+  },
+  "cheer_clips": {
+    "clips": {
+      "Cheer_ArmsUp": {
+        "file": "podium-and-cheers/animations/Cheer_ArmsUp.glb",
+        "duration_s": 1.0,
+        "loop": true
+      },
+      "Cheer_Clap": {
+        "file": "podium-and-cheers/animations/Cheer_Clap.glb",
+        "duration_s": 1.0,
+        "loop": true
+      },
+      "Cheer_FistPump": {
+        "file": "podium-and-cheers/animations/Cheer_FistPump.glb",
+        "duration_s": 1.0,
+        "loop": true
+      },
+      "Cheer_Jump": {
+        "file": "podium-and-cheers/animations/Cheer_Jump.glb",
+        "duration_s": 1.0,
+        "loop": true
+      },
+      "Cheer_Stand": {
+        "file": "podium-and-cheers/animations/Cheer_Stand.glb",
+        "duration_s": 2.0,
+        "loop": true
+      },
+      "Cheer_Wave": {
+        "file": "podium-and-cheers/animations/Cheer_Wave.glb",
+        "duration_s": 2.0,
+        "loop": true
+      }
+    },
+    "notes": "Looping celebration clips of the same skier rig (same part names as the Jump/Fall clips, so applySkierConfig works). Root at the origin, boot soles at y = 0, facing +Z before placement; no skis or poles (snowboard/bobsled options are skipped). Keys start at t = 1/24 s (Blender frame 1); duration_s is the loop length after shifting them to 0, as putOnPodium does."
   }
 }
