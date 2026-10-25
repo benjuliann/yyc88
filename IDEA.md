@@ -9,7 +9,7 @@ This is a browser revival of the 1988 Calgary Winter Olympics. A big screen (lap
 
 1. **Menu**: the landing screen with an '88-styled title, a room code, and links to each section.
 2. **Ski Jump**: a 3D ski jump game, viewed from a side-on camera, built from our own Blender models and controlled by phone tilt and taps.
-3. **Bricks**: a live commemorative brick wall, inspired by the Olympic Plaza bricks, where people add a name or memory from their phone.
+3. **Memorial Plaza**: a commemorative brick floor inspired by the Olympic Plaza bricks. When a race ends, every racer's name is laid into the plaza as a brick.
 
 ## Stack (do not change without asking)
 
@@ -37,8 +37,7 @@ VITE_FIREBASE_DATABASE_URL=      # Realtime Database, for controller input
 | `/` | Big screen | Menu, room code display, QR code to join |
 | `/game/:room` | Big screen | Lobby (room code, QR, players), then the Three.js ski jump |
 | `/play/:room` | Phone | Controller (tilt + tap) |
-| `/bricks` | Big screen | Live brick wall |
-| `/bricks/add` | Phone | Form to add a brick |
+| `/bricks` | Big screen | The Memorial Plaza: every brick ever laid, on a slowly drifting floor |
 
 ## Project structure
 
@@ -54,8 +53,11 @@ src/
     Menu.tsx
     GamePage.tsx          # mounts the Three.js game in useEffect, destroys on unmount
     Controller.tsx
-    Bricks.tsx
-    AddBrick.tsx
+    MemorialPage.tsx      # /bricks
+  memorial/
+    bricks.ts             # watch bricks, lay a brick per racer (Firestore)
+    BrickList.tsx         # the tilted 3D brick floor (CSS)
+    PlazaCeremony.tsx     # race-end animation (Motion)
   game/
     createGame.ts         # scene, camera, renderer, render loop; returns destroy()
     physics.ts            # 2D inrun/takeoff/flight/landing math (x, y)
@@ -106,23 +108,15 @@ Keep the physics as simple custom 2D velocity math on x and y. Three.js only dra
 - Keep models low-poly with small textures, and aim for under about 5 MB in total so the game loads quickly on venue Wi-Fi.
 - Every model needs a placeholder box in code, so the game still runs before an asset is ready.
 
-## Bricks
+## Memorial Plaza
 
-Firestore collection `bricks`, one document per brick: `{ name, message, createdAt }`.
+Firestore collection `bricks`, one document per brick: `{ name, createdAt }`. Bricks hold only a name, like the real Olympic Plaza bricks. There is no form; bricks come from racers.
 
-Security rules so anyone can read and add bricks, with length limits:
-```
-match /bricks/{id} {
-  allow read: if true;
-  allow create: if request.resource.data.name is string
-    && request.resource.data.name.size() <= 40
-    && (!('message' in request.resource.data) || request.resource.data.message.size() <= 80);
-}
-```
-
-- `/bricks` renders a CSS grid of brick-shaped divs and listens with `onSnapshot` so new bricks animate in live.
-- `/bricks/add` is a simple mobile form with client-side length limits and a basic profanity filter if time allows.
-- Seed about 30 bricks so the wall doesn't look empty during judging.
+- When the host ends a race, the big screen writes one brick per player in the room (the name they joined with), then plays the ceremony: the view pans down from the skyline onto the plaza and each new brick drops into place one by one, glowing gold. "Finish" then deletes the room.
+- `/bricks` shows every brick on a tilted CSS 3D floor that slowly moves toward the viewer, and listens with `onSnapshot` so new bricks appear live.
+- Animations use **Motion** (`motion/react`); the floor itself is plain CSS.
+- Security rules live in `firestore.rules` at the project root. Paste them into the Firebase console to apply them.
+- Seed some bricks before judging so the plaza doesn't look empty.
 
 ## Visual style
 
@@ -140,7 +134,7 @@ Work top-down. Commit after each step works.
 3. [ ] Set up the realtime round trip: the phone presses a button and the screen logs it. **Prove this early.**
 4. [ ] Build the Three.js game loop with placeholder boxes and keyboard controls: inrun, takeoff, flight, landing, distance.
 5. [ ] Swap keyboard input for phone events (tap first, then tilt).
-6. [ ] Build the Bricks wall with the add form, live inserts, and seed data.
+6. [ ] Build the Memorial Plaza: lay racers' bricks at race end, the ceremony animation, and seed data.
 7. [ ] Add the results screen and room leaderboard.
 8. [ ] Polish: swap the placeholder boxes for the Blender models, then add sound, transitions, and '88 styling.
 9. [ ] Stretch goals: confetti or a flame on a record jump, multiple players' ghosts, persisted high scores.
@@ -148,7 +142,7 @@ Work top-down. Commit after each step works.
 ## Definition of done
 
 - A judge can open `/`, scan the QR with a phone, and play a full jump.
-- A judge can add a brick from a phone and see it appear on the wall live.
+- A judge can finish a race and watch their name get laid into the Memorial Plaza.
 - No console errors, and it works in Chrome desktop plus iOS Safari and Android Chrome.
 - The README covers how to run it, the concept, and how it fits "revitalize."
 

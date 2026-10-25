@@ -4,6 +4,8 @@ import QRCode from 'react-qr-code'
 import Logo from '../components/Logo'
 import JoinRaceButton from '../components/JoinRaceButton'
 import { deleteRoom, startRace, watchPlayers, watchRoom, type Phase, type Player } from '../lib/room'
+import PlazaCeremony from '../memorial/PlazaCeremony'
+import { addBricks, type Brick } from '../memorial/bricks'
 import '../styles/game.css'
 
 export default function GamePage() {
@@ -11,12 +13,12 @@ export default function GamePage() {
   const navigate = useNavigate()
   const [phase, setPhase] = useState<Phase | null | undefined>(undefined)
   const [players, setPlayers] = useState<Player[]>([])
+  const [laid, setLaid] = useState<Brick[] | null>(null)
 
   useEffect(() => watchRoom(room, setPhase), [room])
   useEffect(() => watchPlayers(room, setPlayers), [room])
 
-  const closeRoom = async (question: string) => {
-    if (!window.confirm(question)) return
+  const finish = async () => {
     try {
       await deleteRoom(room)
       navigate('/')
@@ -25,6 +27,24 @@ export default function GamePage() {
       window.alert("Couldn't close the room. Try again.")
     }
   }
+
+  const closeRoom = (question: string) => {
+    if (window.confirm(question)) finish()
+  }
+
+  // Lays a brick for every racer, then shows the plaza ceremony.
+  const endRace = async () => {
+    if (!window.confirm("End the race and lay everyone's bricks in the plaza?")) return
+    if (players.length === 0) return finish()
+    try {
+      setLaid(await addBricks(players.map((player) => player.name)))
+    } catch (err) {
+      console.error(err)
+      window.alert("Couldn't lay the bricks. Try again.")
+    }
+  }
+
+  if (laid) return <PlazaCeremony laid={laid} onFinish={finish} />
 
   if (phase === undefined) return <main className="lobby" />
   if (phase === null) {
@@ -41,7 +61,7 @@ export default function GamePage() {
       <main className="lobby lobby--center">
         <p className="lobby__code">Race on!</p>
         <div className="lobby__actions">
-          <JoinRaceButton variant="outline" label="End race" onClick={() => closeRoom('End the race and close this room?')} />
+          <JoinRaceButton variant="outline" label="End race" onClick={endRace} />
         </div>
       </main>
     )

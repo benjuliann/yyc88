@@ -38,17 +38,15 @@ service cloud.firestore {
       }
     }
 
-    // Memorial bricks: bricks/{id} with { name, message, createdAt }.
-    // Anyone can add one; nobody can edit or delete them from the app.
+    // Memorial bricks: bricks/{id} with { name, createdAt }, one per racer, laid when a race ends.
+    // Nobody can edit or delete them from the app.
     match /bricks/{brickId} {
       allow read: if true;
 
-      allow create: if request.resource.data.keys().hasOnly(['name', 'message', 'createdAt'])
+      allow create: if request.resource.data.keys().hasOnly(['name', 'createdAt'])
         && request.resource.data.name is string
         && request.resource.data.name.size() > 0
-        && request.resource.data.name.size() <= 40
-        && request.resource.data.message is string
-        && request.resource.data.message.size() <= 80
+        && request.resource.data.name.size() <= 20
         && request.resource.data.createdAt == request.time;
     }
   }
