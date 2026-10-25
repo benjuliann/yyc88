@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, JSX } from "react";
-import "./Menu.css";
+import "../styles/customize.css";
 
 // ---------- types ----------
 type Gear = "skis" | "snowboard" | "bobsled";
@@ -114,29 +114,7 @@ const randColor = () => pick(COLORS).value;
 const maybeColor = (chance: number) =>
   Math.random() < chance ? randColor() : null;
 
-const ADJECTIVES = [
-  "Frosty",
-  "Snowy",
-  "Icy",
-  "Swift",
-  "Chilly",
-  "Fluffy",
-  "Bold",
-  "Lucky",
-];
-const ANIMALS = [
-  "Fox",
-  "Yeti",
-  "Otter",
-  "Penguin",
-  "Moose",
-  "Wolf",
-  "Owl",
-  "Bear",
-];
-const randomName = () => `${pick(ADJECTIVES)} ${pick(ANIMALS)}`;
-
-const randomOutfit = (): Omit<SkierConfig, "name"> => ({
+export const randomOutfit = (): Omit<SkierConfig, "name"> => ({
   gear: pick<Gear>(["skis", "snowboard", "bobsled"]),
   gearColor: randColor(),
   hatStyle: pick<HatStyle>(["none", "beanie", "cap", "helmet"]),
@@ -145,7 +123,7 @@ const randomOutfit = (): Omit<SkierConfig, "name"> => ({
   scarfColor: maybeColor(0.7),
   gogglesColor: maybeColor(0.4),
   shadesColor: maybeColor(0.25),
-  mittenColor: maybeColor(0.8),
+  mittenColor: randColor(),
   shirtColor: randColor(),
   pantsColor: randColor(),
   bootColor: randColor(),
@@ -795,10 +773,13 @@ const opts = <T extends string>(...values: T[]) =>
   values.map((v) => ({ label: v[0].toUpperCase() + v.slice(1), value: v }));
 
 // ---------- page ----------
-export default function Menu({
+// `name` is the name the player joined the lobby with.
+export default function CustomizePage({
+  name,
   onSubmit,
   submitLabel = "Save skier",
 }: {
+  name: string;
   onSubmit?: (skier: SkierConfig) => void;
   submitLabel?: string;
 }) {
@@ -814,7 +795,7 @@ export default function Menu({
   };
 
   const randomizeOutfit = () => {
-    setSkier((s) => ({ ...randomOutfit(), name: s.name })); // keep the typed name
+    setSkier((s) => ({ ...randomOutfit(), name: s.name }));
     setSaved(false);
   };
 
@@ -825,7 +806,7 @@ export default function Menu({
   }, [saved]);
 
   const save = () => {
-    const finalSkier = { ...skier, name: skier.name.trim() || "Skier" };
+    const finalSkier = { ...skier, name };
     setSkier(finalSkier);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(finalSkier));
     setSaved(true);
@@ -837,36 +818,17 @@ export default function Menu({
       <Snow />
 
       <div className="menu-wrap">
-        <h1>Menu</h1>
+        <h1>Customize your skier</h1>
 
         <div style={{ display: "flex", gap: 28, flexWrap: "wrap" }}>
           <div className="skier-stage">
             <SkierPreview c={skier} />
             <div style={{ fontWeight: 700, minHeight: 24, marginTop: 6 }}>
-              {skier.name || "Your skier"}
+              {name}
             </div>
           </div>
 
           <div style={{ flex: 1, minWidth: 260 }}>
-            <div style={{ marginBottom: 16 }}>
-              <label>
-                <div style={{ marginBottom: 6, fontWeight: 600 }}>Name</div>
-                <input
-                  value={skier.name}
-                  maxLength={16}
-                  placeholder="Choose a name"
-                  onChange={(e) => update("name", e.target.value)}
-                  style={{ padding: 8, fontSize: 16, width: "100%" }}
-                />
-              </label>
-              <button
-                style={{ ...pillStyle, marginTop: 8 }}
-                onClick={() => update("name", randomName())}
-              >
-                🎲 Random name
-              </button>
-            </div>
-
             <div style={{ marginBottom: 16 }}>
               <button style={pillStyle} onClick={randomizeOutfit}>
                 🎲 Randomize outfit
@@ -984,8 +946,7 @@ export default function Menu({
             <ColorPicker
               label="Mittens"
               value={skier.mittenColor}
-              onChange={(v) => update("mittenColor", v)}
-              allowNone
+              onChange={(v) => update("mittenColor", v!)}
             />
 
             <h2>Accessories</h2>

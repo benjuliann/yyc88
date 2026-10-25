@@ -1,9 +1,11 @@
 import { useEffect, useState, type SubmitEvent } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import Logo from '../components/Logo'
+import JoinRaceButton from '../components/JoinRaceButton'
 import TiltPad from '../components/TiltPad'
 import RotatePhone from '../components/RotatePhone'
-import { getPlayerId, isValidRoomCode, joinRoom, leaveRoom, watchRoom, type Phase } from '../lib/room'
+import { getPlayerId, isValidRoomCode, joinRoom, leaveRoom, saveSkier, watchPlayer, watchRoom, type Phase, type Player } from '../lib/room'
+import CustomizePage, { type SkierConfig } from './CustomizePage'
 import '../styles/controller.css'
 
 export default function Controller() {
@@ -45,17 +47,18 @@ function EnterCode() {
 function JoinRoom({ room }: { room: string }) {
   const navigate = useNavigate()
   const [phase, setPhase] = useState<Phase | null | undefined>(undefined)
+  const [me, setMe] = useState<Player | null | undefined>(undefined)
   const [name, setName] = useState('')
-  const [joined, setJoined] = useState(false)
   const [error, setError] = useState('')
 
   useEffect(() => watchRoom(room, setPhase), [room])
+  // Joined is read from the room, so coming back from customizing doesn't ask for the name again.
+  useEffect(() => watchPlayer(room, getPlayerId(), setMe), [room])
 
   const submit = async (event: SubmitEvent) => {
     event.preventDefault()
     try {
       await joinRoom(room, getPlayerId(), name.trim())
-      setJoined(true)
     } catch (err) {
       console.error(err)
       setError("Couldn't join. Try again.")
@@ -72,7 +75,7 @@ function JoinRoom({ room }: { room: string }) {
     }
   }
 
-  if (phase === undefined) return null
+  if (phase === undefined || me === undefined) return null
   if (phase === null) {
     return (
       <div className="controller__form">
@@ -85,15 +88,16 @@ function JoinRoom({ room }: { room: string }) {
     )
   }
 
-  if (joined) {
+  if (me) {
     // The controller only appears once the host starts the race.
     if (phase === 'playing') return <TiltPad room={room} />
     return (
       <div className="controller__form">
         <RotatePhone to="portrait" />
         <Logo />
-        <p className="controller__message">You're in, {name.trim()}! Look at the big screen.</p>
+        <p className="controller__message">You're in, {me.name}! Look at the big screen.</p>
         {error && <p className="controller__error">{error}</p>}
+        <JoinRaceButton label="Customize skier" to={`/play/${room}/customize`} />
         <button type="button" className="join-race join-race--outline" onClick={leave}>
           Leave room
         </button>
@@ -121,4 +125,24 @@ function JoinRoom({ room }: { room: string }) {
       </button>
     </form>
   )
+}
+
+// Only for players in a room that's still in the lobby; anyone else goes back to the room.
+export function CustomizeSkier() {
+  const { room = '' } = useParams()
+  const navigate = useNavigate()
+  const [phase, setPhase] = useState<Phase | null | undefined>(undefined)
+  const [me, setMe] = useState<Player | null | undefined>(undefined)
+
+  useEffect(() => watchRoom(room, setPhase), [room])
+  useEffect(() => watchPlayer(room, getPlayerId(), setMe), [room])
+
+  if (phase === undefined || me === undefined) return null
+  if (phase !== 'lobby' || !me) return <Navigate to={`/play/${room}`} replace />
+  const done = (skier: SkierConfig) => {
+    // Shared with the big screen for the race lineup; the phone moves on either way.
+    saveSkier(room, getPlayerId(), skier).catch((err) => console.error(err))
+    navigate(`/play/${room}`)
+  }
+  return <CustomizePage name={me.name} submitLabel="Done" onSubmit={done} />
 }

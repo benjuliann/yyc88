@@ -55,7 +55,7 @@ export default function GamePage() {
     )
   }
 
-  if (phase === 'playing') return <SkiJumpPage onFinish={endRace} />
+  if (phase === 'playing') return <SkiJumpPage onFinish={endRace} contestants={players} />
 
   const host = window.location.host
   return (
