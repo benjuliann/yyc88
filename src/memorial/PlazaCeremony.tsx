@@ -7,7 +7,7 @@ import { watchBricks, type Brick } from './bricks'
 import '../styles/memorial.css'
 
 // After a race: close over the plaza pavement, each racer's name is set into a paver one by one,
-// then the view slowly pulls back out to the Memorial Plaza, just as /bricks shows it.
+// then the view slowly pulls back out to Olympic Plaza, just as /bricks shows it.
 export default function PlazaCeremony({ laid, onFinish }: { laid: Brick[]; onFinish: () => void }) {
   const [bricks, setBricks] = useState<Brick[]>([])
   const [done, setDone] = useState(false)
@@ -34,7 +34,7 @@ export default function PlazaCeremony({ laid, onFinish }: { laid: Brick[]; onFin
         animate={done ? { opacity: 1, y: 0 } : undefined}
         transition={{ duration: 0.8 }}
       >
-        <h1 className="memorial__title">The Memorial Plaza</h1>
+        <h1 className="memorial__title">Olympic Plaza</h1>
         <p className="memorial__subtitle">Every racer leaves their name in the plaza.</p>
       </motion.div>
 

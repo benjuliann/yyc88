@@ -5,7 +5,7 @@ const Navbar = () => {
   return (
     <nav className="navbar">
       <Logo />
-      <JoinRaceButton variant="outline" to="/bricks" label="Memorial" />
+      <JoinRaceButton variant="outline" to="/bricks" label="Olympic Plaza" />
     </nav>
   )
 }

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import * as THREE from 'three'
 import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js'
+import Loader from '../components/Loader'
 import ScorePopup from '../components/ScorePopup'
 import { MODELS, DISTANCES, clipFile, fallFile, fixBlenderLights, type Manifest } from '../lib/skiModels'
 import { playApplause, playCountdownBeep, playScoreSound, playWipeoutSound, stopCrowdSounds, syncSlopeSounds } from '../lib/scoreSounds'
@@ -10,6 +11,7 @@ import { applyGearPose, applySkierConfig, loadSkierAccessories } from '../lib/sk
 import { loadSkier, randomOutfit, type SkierConfig } from './CustomizePage'
 import { podiumSpot, putOnPodium, type Place } from '../lib/podium'
 import type { Player } from '../lib/room'
+import { sendState, serverNow, watchInput } from '../lib/input'
 import '../styles/ski-jump.css'
 
 // All 41 clips are identical up to takeoff (takeoff_frame 112 in every clip of the manifest),
@@ -19,15 +21,22 @@ const TAKEOFF_T = 112 / FPS
 const INRUN_CLIP = 100
 
 // Balance feel: the skier's sideways position is unstable (drifts away from the centre line),
-// gusts knock it around, and ←/→ steer back. The needle shows that position.
+// gusts knock it around, a crosswind keeps pushing it to one side (so leaving the controls alone
+// always ends in a wipeout), and ←/→ steer back. The needle shows that position.
 // Tweak these to make the game easier or harder.
 const DRIFT = 2.2
 const GUST = 5
+const WIND = 0.6
+const WIND_CHANGE = 2 // seconds before the crosswind picks a new side and strength
 const PUSH = 6
 const DAMPING = 0.97
 
 // Timing: pressing this many seconds early (or not at all) scores zero.
 const TIMING_WINDOW = 0.75
+
+// A phone's jump reaches the screen late. At the lip the skier waits up to this long (seconds)
+// for one made in time to arrive.
+const LIP_WAIT_MAX = 0.3
 
 // The takeoff rating plays the earned distance's landing sound, pitched down by this playback rate.
 const TAKEOFF_SOUND_RATE = 0.8
@@ -73,7 +82,7 @@ type Takeoff = { label: string; balance: number; timing: number }
 function rateTakeoff(balance: number, pressT: number | null): Takeoff & { distance: number } {
   const early = pressT === null ? Infinity : TAKEOFF_T - pressT
   const timing = Math.max(0.1, 1 - early / TIMING_WINDOW)
-  const label = pressT === null ? 'TOO LATE!' : early < 0.12 ? 'PERFECT!' : early < 0.35 ? 'GOOD' : 'EARLY!'
+  const label = pressT === null ? 'TOO LATE!' : early < 0.2 ? 'PERFECT!' : early < 0.35 ? 'GOOD' : 'EARLY!'
   const raw = 200 * balance * timing
   const distance = Math.min(200, Math.max(0, Math.round(raw / 5) * 5))
   return { label, balance, timing, distance }
@@ -95,7 +104,7 @@ function landingHalfWidth(profile: [number, number][], z: number) {
 // `onFinish` is set when the jump is part of a race: it's called once the jump is done.
 // `contestants` (race only) get an opening ceremony and a lineup, then jump one at a time in join order
 // and are ranked on the podium by distance.
-export default function SkiJumpPage({ onFinish, contestants }: { onFinish?: () => void; contestants?: Player[] }) {
+export default function SkiJumpPage({ onFinish, contestants, room }: { onFinish?: () => void; contestants?: Player[]; room?: string }) {
   // The players at the moment the race started; later joins/leaves don't change the lineup.
   const [lineupPlayers] = useState(() => contestants ?? [])
   const mountRef = useRef<HTMLDivElement>(null)
@@ -139,8 +148,8 @@ export default function SkiJumpPage({ onFinish, contestants }: { onFinish?: () =
     // Who jumps, in join order, each in their customized skier (a random outfit if they never
     // customized). A solo jump is one turn in the skier saved in this browser.
     const racers = lineupPlayers.length
-      ? lineupPlayers.map((p) => ({ name: p.name, skier: p.skier ?? { ...randomOutfit(), name: p.name } }))
-      : [{ name: '', skier: loadSkier() }]
+      ? lineupPlayers.map((p) => ({ id: p.id, name: p.name, skier: p.skier ?? { ...randomOutfit(), name: p.name } }))
+      : [{ id: '', name: '', skier: loadSkier() }]
     let turn = 0
     let tries = 0 // runs started this turn
     const results: (Result & { skier: SkierConfig })[] = []
@@ -443,9 +452,12 @@ export default function SkiJumpPage({ onFinish, contestants }: { onFinish?: () =
       phase: 'loading' as Phase,
       balance: 0,
       velocity: 0,
+      wind: 0, // -1 to 1, + = pushes right
+      windTime: 0,
       balanceSum: 0,
       balanceTime: 0,
       pressT: null as number | null,
+      lipWait: 0, // seconds held on the lip waiting for a phone's jump
       distance: 0,
       landed: false,
       slide: 0, // metres from the centre line, + = screen right
@@ -469,7 +481,7 @@ export default function SkiJumpPage({ onFinish, contestants }: { onFinish?: () =
       const inrun = await getClip(INRUN_CLIP)
       if (disposed) return
       tries++
-      Object.assign(game, { phase: 'countdown', countdownTime: 0, balance: 0, velocity: 0, balanceSum: 0, balanceTime: 0, pressT: null, landed: false, slide: 0, lean: 0 })
+      Object.assign(game, { phase: 'countdown', countdownTime: 0, balance: 0, velocity: 0, windTime: 0, balanceSum: 0, balanceTime: 0, pressT: null, lipWait: 0, landed: false, slide: 0, lean: 0 })
       setTakeoff(null)
       setPopup(null)
       setCount(String(COUNTDOWN))
@@ -491,6 +503,16 @@ export default function SkiJumpPage({ onFinish, contestants }: { onFinish?: () =
       action!.paused = false
       setCount('GO!')
       setPhase('inrun')
+    }
+
+    // ↑: starts the run at the gate, or takes off at the lip. `lag` (seconds) dates a phone's press
+    // back to when it was made; one made after the lip is too late.
+    const pressJump = (lag = 0) => {
+      if (game.phase === 'ready') start()
+      else if (game.phase === 'inrun' && game.pressT === null) {
+        const t = action!.time + game.lipWait - lag
+        if (t <= TAKEOFF_T) game.pressT = t
+      }
     }
 
     const takeOff = () => {
@@ -577,13 +599,37 @@ export default function SkiJumpPage({ onFinish, contestants }: { onFinish?: () =
       if (e.key === 'ArrowLeft') game.left = down
       if (e.key === 'ArrowRight') game.right = down
       if (!down || e.repeat || (e.key !== 'ArrowUp' && e.key !== ' ')) return
-      if (game.phase === 'ready') start()
-      else if (game.phase === 'inrun' && game.pressT === null) game.pressT = action!.time
+      pressJump()
     }
     const onKeyDown = (e: KeyboardEvent) => onKey(e, true)
     const onKeyUp = (e: KeyboardEvent) => onKey(e, false)
     window.addEventListener('keydown', onKeyDown)
     window.addEventListener('keyup', onKeyUp)
+
+    // The current racer's phone: Start leaves the gate, tilt steers on the in-run (-1 left to 1 right)
+    // and a lift takes off. Nothing works once airborne, but the latest tilt is kept for the next run.
+    let phoneTilt = 0
+    let phoneLag = 0 // seconds the racer's latest input took to arrive
+    const stopWatchingPhone = room
+      ? watchInput(room, (playerId, input) => {
+          if (playerId !== racers[turn].id) return
+          phoneLag = Math.max(0, (serverNow() - input.at) / 1000)
+          if (input.key === 'tilt') phoneTilt = input.tilt ?? 0
+          else if (input.key === 'start' && game.phase === 'ready') start()
+          else if (input.key === 'jump' && game.phase === 'inrun') pressJump(phoneLag)
+        })
+      : null
+    // Tells the phones whose turn it is and how the run is going, only when that changes.
+    let lastState = ''
+    const publishState = () => {
+      if (!room) return
+      const lip = game.phase === 'inrun' && action ? Math.min(action.time / TAKEOFF_T, 1) : 0
+      const state = { turn: racers[turn].id, phase: game.phase, balance: Math.round(game.balance * 50) / 50, lip: Math.round(lip * 50) / 50 }
+      const json = JSON.stringify(state)
+      if (json === lastState) return
+      lastState = json
+      sendState(room, state).catch(console.error)
+    }
 
     const onResize = () => {
       renderer.setSize(mount.clientWidth, mount.clientHeight)
@@ -641,7 +687,8 @@ export default function SkiJumpPage({ onFinish, contestants }: { onFinish?: () =
       const dt = Math.min(timer.getDelta(), 0.1)
       cam?.position.sub(camOffset)
       mixer?.update(dt)
-      const push = (game.right ? 1 : 0) - (game.left ? 1 : 0)
+      const phonePush = game.phase === 'inrun' ? phoneTilt : 0
+      const push = THREE.MathUtils.clamp((game.right ? 1 : 0) - (game.left ? 1 : 0) + phonePush, -1, 1)
       const pos = steer?.parent?.position // trajectory root, world space (top-level node)
 
       if (game.phase === 'countdown') {
@@ -656,7 +703,12 @@ export default function SkiJumpPage({ onFinish, contestants }: { onFinish?: () =
       }
 
       if (game.phase === 'inrun' && action) {
-        game.velocity += (game.balance * DRIFT + (Math.random() - 0.5) * GUST + push * PUSH) * dt
+        game.windTime -= dt
+        if (game.windTime <= 0) {
+          game.wind = (Math.random() < 0.5 ? -1 : 1) * (0.5 + Math.random() * 0.5)
+          game.windTime = WIND_CHANGE
+        }
+        game.velocity += (game.balance * DRIFT + game.wind * WIND + (Math.random() - 0.5) * GUST + push * PUSH) * dt
         game.velocity *= DAMPING
         game.balance += game.velocity * dt
         const hitSide = Math.abs(game.balance) >= 1
@@ -667,7 +719,14 @@ export default function SkiJumpPage({ onFinish, contestants }: { onFinish?: () =
         if (lipFillRef.current) lipFillRef.current.style.width = `${Math.min(action.time / TAKEOFF_T, 1) * 100}%`
         game.slide = game.balance * inrunLimit
         if (hitSide) edgeWipeout(INRUN_CLIP)
-        else if (action.time >= TAKEOFF_T) takeOff()
+        else if (action.time >= TAKEOFF_T) {
+          // A jump made before the lip may still be on its way from the phone: hold on the lip for
+          // about as long as the phone's inputs take to arrive (plus a little jitter).
+          if (room && game.pressT === null && game.lipWait < Math.min(phoneLag + 0.05, LIP_WAIT_MAX)) {
+            action.paused = true
+            game.lipWait += dt
+          } else takeOff()
+        }
       } else if (game.phase === 'flight' && pos) {
         const limit = landingHalfWidth(landingProfile, pos.z) - SKIER_HALF_WIDTH
         game.slide += push * AIR_STEER * dt
@@ -676,6 +735,8 @@ export default function SkiJumpPage({ onFinish, contestants }: { onFinish?: () =
         if (onGround && Math.abs(game.slide) >= limit) edgeWipeout(game.distance)
         else game.slide = THREE.MathUtils.clamp(game.slide, -limit, limit)
       }
+
+      publishState()
 
       if (game.phase === 'crash') {
         game.crashTime += dt
@@ -784,18 +845,19 @@ export default function SkiJumpPage({ onFinish, contestants }: { onFinish?: () =
       renderer.setAnimationLoop(null)
       window.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('keyup', onKeyUp)
+      stopWatchingPhone?.()
       window.removeEventListener('resize', onResize)
       renderer.dispose()
       snow.dispose()
       mount.removeChild(renderer.domElement)
     }
-  }, [lineupPlayers])
+  }, [lineupPlayers, room])
 
   return (
     <div className="ski-jump">
       <div ref={mountRef} className="ski-jump__canvas" />
 
-      {phase === 'loading' && <div className="ski-jump__banner">LOADING…</div>}
+      <Loader loading={phase === 'loading'} />
 
       {phase === 'opening' && (
         <div className="ski-jump__title">

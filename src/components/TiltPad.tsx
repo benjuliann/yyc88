@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
-import { sendInput } from "../lib/input";
+import { sendInput, watchState, type RunState } from "../lib/input";
 import { getPlayerId } from "../lib/room";
 import RotatePhone from "./RotatePhone";
+import "../styles/ski-jump.css";
 
 const DEADZONE = 5; // degrees of tilt ignored around level
 const FULL_TILT = 45; // degrees of tilt for full left/right
@@ -11,12 +12,14 @@ const JUMP_COOLDOWN = 600; // ms
 // iOS only fires motion events after the page asks from a tap.
 type PermissionEvent = { requestPermission?: () => Promise<string> };
 
-// Held sideways like a steering wheel: turn it left/right to steer, lift the phone to jump.
+// Held sideways like a steering wheel: press Start on your turn, turn it left/right to steer, lift the phone to jump.
 export default function TiltPad({ room }: { room: string }) {
   const [enabled, setEnabled] = useState(false);
   const [error, setError] = useState("");
-  const [tilt, setTilt] = useState(0);
+  const [run, setRun] = useState<RunState | null>(null);
   const [jumping, setJumping] = useState(false);
+
+  useEffect(() => watchState(room, setRun), [room]);
 
   const send = useCallback(
     (key: string, tilt?: number) => {
@@ -38,7 +41,6 @@ export default function TiltPad({ room }: { room: string }) {
       const next = Math.round(Math.sign(degrees) * amount * 10) / 10; // steps of 0.1 to limit sends
       if (next === lastTilt) return;
       lastTilt = next;
-      setTilt(next);
       send("tilt", next);
     };
 
@@ -62,67 +64,72 @@ export default function TiltPad({ room }: { room: string }) {
     return () => window.removeEventListener("devicemotion", onMotion);
   }, [enabled, send]);
 
+  // The motion permission has to be asked from this tap, so the first Start also turns the sensors on.
   const start = async () => {
-    try {
-      // Browsers hide the motion API entirely on non-HTTPS pages.
-      if (typeof DeviceMotionEvent === "undefined") {
-        setError("Motion sensors need a secure (https) page. Open this site over https.");
+    if (!enabled) {
+      try {
+        // Browsers hide the motion API entirely on non-HTTPS pages.
+        if (typeof DeviceMotionEvent === "undefined") {
+          setError("Motion sensors need a secure (https) page. Open this site over https.");
+          return;
+        }
+        const motion = DeviceMotionEvent as unknown as PermissionEvent;
+        if (motion.requestPermission && (await motion.requestPermission()) !== "granted") {
+          setError("Motion access is needed to play. Close this tab and reopen the page to be asked again.");
+          return;
+        }
+        setEnabled(true);
+      } catch (err) {
+        console.error(err);
+        setError(`Couldn't read motion sensors: ${err instanceof Error ? err.message : err}`);
         return;
       }
-      const motion = DeviceMotionEvent as unknown as PermissionEvent;
-      if (motion.requestPermission && (await motion.requestPermission()) !== "granted") {
-        setError("Motion access is needed to play. Close this tab and reopen the page to be asked again.");
-        return;
-      }
-      setEnabled(true);
-    } catch (err) {
-      console.error(err);
-      setError(`Couldn't read motion sensors: ${err instanceof Error ? err.message : err}`);
     }
+    send("start");
   };
 
-  if (!enabled) {
-    return (
-      <div className="controller__form">
-        <RotatePhone to="landscape" />
-        <p className="controller__message">Hold your phone sideways. Turn it to steer, lift it to jump.</p>
-        {error && <p className="controller__error">{error}</p>}
-        <button className="join-race join-race--solid" onClick={start}>
-          Start
-        </button>
-      </div>
-    );
-  }
+  // The big screen only listens to the racer whose turn it is, and only until they leave the ground.
+  const myTurn = run?.turn === getPlayerId();
+  const atGate = myTurn && run?.phase === "ready";
+  const inrun = myTurn && run?.phase === "inrun";
+  const hint = !myTurn
+    ? "Wait for your turn"
+    : atGate
+      ? "Your turn! Hold your phone sideways and press Start"
+      : run?.phase === "countdown"
+        ? "Get ready…"
+        : inrun
+          ? jumping
+            ? "Jump!"
+            : "Turn to balance, lift to take off"
+          : run?.phase === "flight"
+            ? "In the air, controls off"
+            : "Controls off";
 
   return (
     <div className="controller__form">
       <RotatePhone to="landscape" />
-      <p className="controller__message">{jumping ? "Jump!" : "Turn to steer, lift to jump"}</p>
+      <p className="controller__message">{hint}</p>
+      {error && <p className="controller__error">{error}</p>}
 
-      {/* Tilt meter: the marker slides from left edge (-1) to right edge (1). */}
-      <div style={{ position: "relative", width: 240, height: 24, borderRadius: 12, background: "#ddd" }}>
-        <div
-          style={{
-            position: "absolute",
-            top: 0,
-            left: `${((tilt + 1) / 2) * 100}%`,
-            width: 24,
-            height: 24,
-            marginLeft: -12,
-            borderRadius: 12,
-            background: jumping ? "#e21b3c" : "#1368ce",
-          }}
-        />
+      {/* The same meters as the big screen, dimmed while the controls are off. */}
+      <div className="ski-jump__hud ski-jump__hud--phone" style={{ opacity: inrun ? 1 : 0.4 }}>
+        <div className="ski-jump__meter-label">BALANCE</div>
+        <div className="ski-jump__meter">
+          <div className="ski-jump__meter-zone" />
+          <div
+            className="ski-jump__needle"
+            style={{ left: `${50 + (inrun ? run.balance : 0) * 50}%`, transition: "left 0.1s linear" }}
+          />
+        </div>
+        <div className="ski-jump__meter-label">TAKE-OFF ↑</div>
+        <div className="ski-jump__lip">
+          <div className="ski-jump__lip-fill" style={{ width: `${(inrun ? run.lip : 0) * 100}%`, transition: "width 0.1s linear" }} />
+        </div>
       </div>
 
-      <button
-        className="join-race join-race--outline"
-        onClick={(e) => {
-          send("restart");
-          e.currentTarget.blur();
-        }}
-      >
-        Restart
+      <button className="join-race join-race--solid" disabled={!atGate} onClick={start}>
+        Start
       </button>
     </div>
   );

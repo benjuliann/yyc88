@@ -55,6 +55,30 @@ button {
   stroke-width: 3;
 }
 
+/* Loading: the screen covered in night blue, with the logo's flake spinning */
+.loader {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #101a33;
+}
+
+.loader__flake {
+  width: 72px;
+  height: 72px;
+  fill: #d7262e;
+  animation: loader-spin 1.6s cubic-bezier(0.6, 0, 0.4, 1) infinite;
+}
+
+@keyframes loader-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* Pill button */
 .join-race {
   display: inline-block;
