@@ -4,6 +4,7 @@ import Logo from '../components/Logo'
 import JoinRaceButton from '../components/JoinRaceButton'
 import TiltPad from '../components/TiltPad'
 import RotatePhone from '../components/RotatePhone'
+import { isCleanName } from '../lib/nameFilter'
 import { MAX_PLAYERS, getPlayerId, isValidRoomCode, joinRoom, leaveRoom, saveSkier, watchPlayer, watchPlayers, watchRoom, type Phase, type Player } from '../lib/room'
 import CustomizePage, { type SkierConfig } from './CustomizePage'
 import '../styles/controller.css'
@@ -59,6 +60,7 @@ function JoinRoom({ room }: { room: string }) {
 
   const submit = async (event: SubmitEvent) => {
     event.preventDefault()
+    if (!isCleanName(name)) return setError('Please pick a different name.')
     try {
       if (!(await joinRoom(room, getPlayerId(), name.trim()))) setError(`Maximum limit reached: this room already has ${MAX_PLAYERS} players.`)
     } catch (err) {
