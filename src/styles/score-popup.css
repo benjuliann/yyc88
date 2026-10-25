@@ -1,0 +1,40 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+.score-popup {
+  position: absolute;
+  top: 18%;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  white-space: nowrap;
+  font-family: 'Press Start 2P', monospace;
+  pointer-events: none;
+  animation: score-slam 0.45s cubic-bezier(0.2, 1.6, 0.4, 1) both;
+}
+
+.score-popup__label {
+  font-size: clamp(12px, 2.2vw, 22px);
+  color: #fff;
+  letter-spacing: 4px;
+  text-shadow: 3px 3px 0 #1b1464;
+  margin-bottom: 14px;
+}
+
+.score-popup__value {
+  font-size: clamp(40px, 9vw, 110px);
+  color: #ffe600;
+  /* Stacked hard shadows for a chunky 8-bit outline + drop. */
+  text-shadow:
+    -4px 0 0 #1b1464, 4px 0 0 #1b1464, 0 -4px 0 #1b1464, 0 4px 0 #1b1464,
+    8px 8px 0 #e4002b;
+  animation: score-flicker 0.12s steps(2) 0.45s 6;
+}
+
+@keyframes score-slam {
+  0% { transform: translateX(-50%) scale(3); opacity: 0; }
+  100% { transform: translateX(-50%) scale(1); opacity: 1; }
+}
+
+@keyframes score-flicker {
+  50% { color: #fff; }
+}

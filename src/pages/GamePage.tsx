@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { Navigate, useParams } from 'react-router-dom'
 import QRCode from 'react-qr-code'
 import Logo from '../components/Logo'
 import JoinRaceButton from '../components/JoinRaceButton'
@@ -55,17 +55,8 @@ export default function GamePage() {
     )
   }
 
-  if (phase === 'playing') {
-    // TODO: mount the ski jump game here.
-    return (
-      <main className="lobby lobby--center">
-        <p className="lobby__code">Race on!</p>
-        <div className="lobby__actions">
-          <JoinRaceButton variant="outline" label="End race" onClick={endRace} />
-        </div>
-      </main>
-    )
-  }
+  // TODO: mount the ski jump game here instead of the controller test page.
+  if (phase === 'playing') return <Navigate to={`/controller-test/${room}`} replace />
 
   const host = window.location.host
   return (
