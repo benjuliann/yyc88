@@ -33,6 +33,9 @@ const LandingPage = () => {
         <JoinRaceButton onClick={hostRace} />
         {error && <p className="landing__error">{error}</p>}
       </section>
+      <p className="landing__disclaimer">
+        Not affiliated with or endorsed by the IOC, COC or CODA.
+      </p>
     </main>
   )
 }

@@ -48,13 +48,6 @@ button {
   color: #f4ece0;
 }
 
-.logo__rings {
-  width: clamp(80px, 7vw, 110px);
-  margin-top: -4px;
-  fill: none;
-  stroke-width: 3;
-}
-
 /* Loading: the screen covered in night blue, with the logo's flake spinning */
 .loader {
   position: fixed;

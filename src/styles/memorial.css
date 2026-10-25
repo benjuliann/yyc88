@@ -70,3 +70,45 @@
   display: flex;
   justify-content: center;
 }
+
+/* Newspaper clipping */
+.newspaper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 20;
+  transform-origin: 0 0;
+  cursor: zoom-in;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+  transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+  touch-action: none;
+  user-select: none;
+}
+
+.newspaper:not(.newspaper--open):hover {
+  filter: brightness(1.1);
+}
+
+.newspaper--open {
+  cursor: grab;
+}
+
+.newspaper--dragging {
+  cursor: grabbing;
+  transition: none;
+}
+
+.newspaper-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 19;
+  background: rgba(8, 12, 24, 0.7);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+
+.newspaper-backdrop--open {
+  opacity: 1;
+  pointer-events: auto;
+}

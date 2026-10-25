@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Logo from '../components/Logo'
 import PlazaScene from '../memorial/PlazaScene'
+import Newspaper from '../memorial/Newspaper'
 import { watchBricks, type Brick } from '../memorial/bricks'
 import '../styles/memorial.css'
 
@@ -20,6 +21,8 @@ const MemorialPage = () => {
           <span aria-hidden="true">←</span> Back
         </Link>
       </header>
+
+      <Newspaper />
 
       <div className="memorial__intro">
         <h1 className="memorial__title">Olympic Plaza</h1>
