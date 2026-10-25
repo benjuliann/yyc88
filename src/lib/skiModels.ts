@@ -4,6 +4,8 @@ import * as THREE from 'three'
 export const MODELS = '/models/calgary'
 export const DISTANCES = Array.from({ length: 41 }, (_, i) => i * 5)
 export const clipFile = (m: number) => `${MODELS}/animations/Jump_${String(m).padStart(3, '0')}m.glb`
+// Same jump up to landing_frame, then a crash (see fall_clips in the manifest).
+export const fallFile = (m: number) => `${MODELS}/animations/Fall_${String(m).padStart(3, '0')}m.glb`
 
 export type Manifest = {
   clips: { distance_m: number; fps: number; takeoff_frame: number; landing_frame: number }[]
