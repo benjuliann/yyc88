@@ -207,6 +207,26 @@
   }
 }
 
+/* /bricks: the 3D plaza fills the screen behind the title, with a night wash at the top so the title reads. */
+.plaza-scene {
+  position: absolute;
+  inset: 0;
+}
+
+.plaza-scene::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(rgba(16, 26, 51, 0.9), rgba(16, 26, 51, 0) 40%);
+  pointer-events: none;
+}
+
+.plaza-scene ~ .memorial__header,
+.plaza-scene ~ .memorial__intro {
+  position: relative;
+  z-index: 1;
+}
+
 /* Race-end ceremony */
 .memorial__floor {
   display: flex;

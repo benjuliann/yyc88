@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import Logo from '../components/Logo'
-import BrickList from '../memorial/BrickList'
+import PlazaScene from '../memorial/PlazaScene'
 import { watchBricks, type Brick } from '../memorial/bricks'
 import '../styles/memorial.css'
 
@@ -11,6 +11,8 @@ const MemorialPage = () => {
 
   return (
     <main className="memorial">
+      <PlazaScene bricks={bricks} />
+
       <header className="memorial__header">
         <Logo />
       </header>
@@ -19,8 +21,6 @@ const MemorialPage = () => {
         <h1 className="memorial__title">The Memorial Plaza</h1>
         <p className="memorial__subtitle">Every racer leaves their name in the plaza.</p>
       </div>
-
-      <BrickList bricks={bricks} />
     </main>
   )
 }
