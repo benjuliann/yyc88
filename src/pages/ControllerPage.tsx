@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import Logo from '../components/Logo'
 import TiltPad from '../components/TiltPad'
 import RotatePhone from '../components/RotatePhone'
-import { getPlayerId, isValidRoomCode, joinRoom, watchRoom, type Phase } from '../lib/room'
+import { getPlayerId, isValidRoomCode, joinRoom, leaveRoom, watchRoom, type Phase } from '../lib/room'
 import '../styles/controller.css'
 
 export default function Controller() {

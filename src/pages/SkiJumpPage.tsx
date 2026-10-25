@@ -46,6 +46,9 @@ const COUNTDOWN = 3
 const PAN_START = 0.4
 const PAN_END = 2.8
 
+// In a race room: seconds to show the score after the jump before the race ends.
+const FINISH_DELAY = 3
+
 
 type Phase = 'loading' | 'ready' | 'countdown' | 'inrun' | 'flight' | 'done' | 'crash' | 'fall'
 type Takeoff = { label: string; balance: number; timing: number }
@@ -72,7 +75,8 @@ function landingHalfWidth(profile: [number, number][], z: number) {
   return profile[profile.length - 1][1]
 }
 
-export default function SkiJumpPage() {
+// `onFinish` is set when the jump is part of a race: it's called once the jump is done.
+export default function SkiJumpPage({ onFinish }: { onFinish?: () => void }) {
   const mountRef = useRef<HTMLDivElement>(null)
   const needleRef = useRef<HTMLDivElement>(null)
   const lipFillRef = useRef<HTMLDivElement>(null)
@@ -83,6 +87,12 @@ export default function SkiJumpPage() {
   const [crashed, setCrashed] = useState<string | null>(null)
   // "3", "2", "1" during the countdown, then "GO!" as the run starts.
   const [count, setCount] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (phase !== 'done' || !onFinish) return
+    const timeout = setTimeout(onFinish, FINISH_DELAY * 1000)
+    return () => clearTimeout(timeout)
+  }, [phase, onFinish])
 
   useEffect(() => {
     const mount = mountRef.current!
@@ -539,7 +549,7 @@ export default function SkiJumpPage() {
         </div>
       )}
 
-      {(phase === 'ready' || phase === 'done') && (
+      {(phase === 'ready' || (phase === 'done' && !onFinish)) && (
         <div className="ski-jump__banner ski-jump__banner--bottom">
           <div className="ski-jump__blink">PRESS ↑ TO {phase === 'done' ? 'JUMP AGAIN' : 'JUMP'}</div>
           <div className="ski-jump__help">&lt; &gt; BALANCE &nbsp;&nbsp; ↑ TAKE OFF AT THE LIP &nbsp;&nbsp; LET GO TO LAND</div>

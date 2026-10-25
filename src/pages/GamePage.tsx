@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
-import { Navigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import QRCode from 'react-qr-code'
 import Logo from '../components/Logo'
 import JoinRaceButton from '../components/JoinRaceButton'
 import { deleteRoom, startRace, watchPlayers, watchRoom, type Phase, type Player } from '../lib/room'
 import PlazaCeremony from '../memorial/PlazaCeremony'
 import { addBricks, type Brick } from '../memorial/bricks'
+import SkiJumpPage from './SkiJumpPage'
 import '../styles/game.css'
 
 export default function GamePage() {
@@ -34,7 +35,6 @@ export default function GamePage() {
 
   // Lays a brick for every racer, then shows the plaza ceremony.
   const endRace = async () => {
-    if (!window.confirm("End the race and lay everyone's bricks in the plaza?")) return
     if (players.length === 0) return finish()
     try {
       setLaid(await addBricks(players.map((player) => player.name)))
@@ -55,8 +55,7 @@ export default function GamePage() {
     )
   }
 
-  // TODO: mount the ski jump game here instead of the controller test page.
-  if (phase === 'playing') return <Navigate to={`/controller-test/${room}`} replace />
+  if (phase === 'playing') return <SkiJumpPage onFinish={endRace} />
 
   const host = window.location.host
   return (
