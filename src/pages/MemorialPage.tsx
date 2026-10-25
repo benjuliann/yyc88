@@ -22,7 +22,7 @@ const MemorialPage = () => {
       </header>
 
       <div className="memorial__intro">
-        <h1 className="memorial__title">The Memorial Plaza</h1>
+        <h1 className="memorial__title">Olympic Plaza</h1>
         <p className="memorial__subtitle">Every racer leaves their name in the plaza.</p>
       </div>
     </main>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { watchPlayers, type Player } from '../lib/room'
-import { watchInput } from '../lib/input'
+import { serverNow, watchInput } from '../lib/input'
 import '../styles/game.css'
 
 type Event = { playerId: string; key: string; at: number; tilt?: number; lag: number }
@@ -18,7 +18,7 @@ export default function ControllerTestPage() {
   useEffect(
     () =>
       watchInput(room, (playerId, input) => {
-        setEvents((list) => [{ playerId, ...input, lag: Date.now() - input.at }, ...list].slice(0, 15))
+        setEvents((list) => [{ playerId, ...input, lag: serverNow() - input.at }, ...list].slice(0, 15))
 
         const update = (change: Partial<Reading>) =>
           setReadings((all) => ({ ...all, [playerId]: { ...(all[playerId] ?? { tilt: 0, up: false }), ...change } }))

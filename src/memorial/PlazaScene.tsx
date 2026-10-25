@@ -1,6 +1,7 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
+import Loader from '../components/Loader'
 import { fixBlenderLights } from '../lib/skiModels'
 import { createSnowOverlay } from '../lib/snowOverlay'
 import type { Brick } from './bricks'
@@ -95,6 +96,7 @@ function engraving(name: string, anisotropy: number) {
 // over those pavers, sets each name into the pavement, then pulls back to the plaza view and calls `onLaid`.
 export default function PlazaScene({ bricks, laying = 0, onLaid }: { bricks: Brick[]; laying?: number; onLaid?: () => void }) {
   const mountRef = useRef<HTMLDivElement>(null)
+  const [loading, setLoading] = useState(true)
   const bricksRef = useRef(bricks)
   const engraveRef = useRef(() => {})
   // Read once: the ceremony is set up when the scene mounts.
@@ -173,6 +175,7 @@ export default function PlazaScene({ bricks, laying = 0, onLaid }: { bricks: Bri
 
     new GLTFLoader().load(MODEL, (gltf) => {
       if (disposed) return
+      setLoading(false)
       fixBlenderLights(gltf.scene)
       const diffusers: THREE.Object3D[] = []
       const lampParts: THREE.Object3D[] = []
@@ -414,5 +417,5 @@ export default function PlazaScene({ bricks, laying = 0, onLaid }: { bricks: Bri
     engraveRef.current()
   }, [bricks])
 
-  return <div ref={mountRef} className="plaza-scene" />
+  return <div ref={mountRef} className="plaza-scene"><Loader loading={loading} /></div>
 }

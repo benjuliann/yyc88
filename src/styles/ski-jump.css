@@ -56,6 +56,14 @@
   box-shadow: 6px 6px 0 #e4002b;
 }
 
+/* The same HUD on the phone controller, laid out in the page flow */
+.ski-jump__hud--phone {
+  position: static;
+  transform: none;
+  font-family: 'Press Start 2P', monospace;
+  color: #fff;
+}
+
 .ski-jump__meter-label {
   font-size: 10px;
   margin: 0 0 8px;
