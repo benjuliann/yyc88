@@ -8,6 +8,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 227,
+      "takeoff_frame": 112,
       "landing_frame": 131
     },
     {
@@ -17,6 +18,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 230,
+      "takeoff_frame": 112,
       "landing_frame": 134
     },
     {
@@ -26,6 +28,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 232,
+      "takeoff_frame": 112,
       "landing_frame": 136
     },
     {
@@ -35,6 +38,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 234,
+      "takeoff_frame": 112,
       "landing_frame": 138
     },
     {
@@ -44,6 +48,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 237,
+      "takeoff_frame": 112,
       "landing_frame": 141
     },
     {
@@ -53,6 +58,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 239,
+      "takeoff_frame": 112,
       "landing_frame": 143
     },
     {
@@ -62,6 +68,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 242,
+      "takeoff_frame": 112,
       "landing_frame": 146
     },
     {
@@ -71,6 +78,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 244,
+      "takeoff_frame": 112,
       "landing_frame": 148
     },
     {
@@ -80,6 +88,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 246,
+      "takeoff_frame": 112,
       "landing_frame": 150
     },
     {
@@ -89,6 +98,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 249,
+      "takeoff_frame": 112,
       "landing_frame": 153
     },
     {
@@ -98,6 +108,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 251,
+      "takeoff_frame": 112,
       "landing_frame": 155
     },
     {
@@ -107,6 +118,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 254,
+      "takeoff_frame": 112,
       "landing_frame": 158
     },
     {
@@ -116,6 +128,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 256,
+      "takeoff_frame": 112,
       "landing_frame": 160
     },
     {
@@ -125,6 +138,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 258,
+      "takeoff_frame": 112,
       "landing_frame": 162
     },
     {
@@ -134,6 +148,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 261,
+      "takeoff_frame": 112,
       "landing_frame": 165
     },
     {
@@ -143,6 +158,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 263,
+      "takeoff_frame": 112,
       "landing_frame": 167
     },
     {
@@ -152,6 +168,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 266,
+      "takeoff_frame": 112,
       "landing_frame": 170
     },
     {
@@ -161,6 +178,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 268,
+      "takeoff_frame": 112,
       "landing_frame": 172
     },
     {
@@ -170,6 +188,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 270,
+      "takeoff_frame": 112,
       "landing_frame": 174
     },
     {
@@ -179,6 +198,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 273,
+      "takeoff_frame": 112,
       "landing_frame": 177
     },
     {
@@ -188,6 +208,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 275,
+      "takeoff_frame": 112,
       "landing_frame": 179
     },
     {
@@ -197,6 +218,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 278,
+      "takeoff_frame": 112,
       "landing_frame": 182
     },
     {
@@ -206,6 +228,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 280,
+      "takeoff_frame": 112,
       "landing_frame": 184
     },
     {
@@ -215,6 +238,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 282,
+      "takeoff_frame": 112,
       "landing_frame": 186
     },
     {
@@ -224,6 +248,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 285,
+      "takeoff_frame": 112,
       "landing_frame": 189
     },
     {
@@ -233,6 +258,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 287,
+      "takeoff_frame": 112,
       "landing_frame": 191
     },
     {
@@ -242,6 +268,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 290,
+      "takeoff_frame": 112,
       "landing_frame": 194
     },
     {
@@ -251,6 +278,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 292,
+      "takeoff_frame": 112,
       "landing_frame": 196
     },
     {
@@ -260,6 +288,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 294,
+      "takeoff_frame": 112,
       "landing_frame": 198
     },
     {
@@ -269,6 +298,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 297,
+      "takeoff_frame": 112,
       "landing_frame": 201
     },
     {
@@ -278,6 +308,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 299,
+      "takeoff_frame": 112,
       "landing_frame": 203
     },
     {
@@ -287,6 +318,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 302,
+      "takeoff_frame": 112,
       "landing_frame": 206
     },
     {
@@ -296,6 +328,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 304,
+      "takeoff_frame": 112,
       "landing_frame": 208
     },
     {
@@ -305,6 +338,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 306,
+      "takeoff_frame": 112,
       "landing_frame": 210
     },
     {
@@ -314,6 +348,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 309,
+      "takeoff_frame": 112,
       "landing_frame": 213
     },
     {
@@ -323,6 +358,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 311,
+      "takeoff_frame": 112,
       "landing_frame": 215
     },
     {
@@ -332,6 +368,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 314,
+      "takeoff_frame": 112,
       "landing_frame": 218
     },
     {
@@ -341,6 +378,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 316,
+      "takeoff_frame": 112,
       "landing_frame": 220
     },
     {
@@ -350,6 +388,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 318,
+      "takeoff_frame": 112,
       "landing_frame": 222
     },
     {
@@ -359,6 +398,7 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 321,
+      "takeoff_frame": 112,
       "landing_frame": 225
     },
     {
@@ -368,10 +408,551 @@
       "fps": 24,
       "frame_start": 1,
       "frame_end": 323,
+      "takeoff_frame": 112,
       "landing_frame": 227
     }
   ],
   "distance_convention": "Model ground centreline surface distance from takeoff ground projection, not official surveyed Olympic measurements.",
   "camera_shake": "Baked into tracking-camera animation at 24 fps.",
-  "coordinate_system": "glTF right-handed, Y up, metres. Environment and clips share world coordinates."
+  "coordinate_system": "glTF right-handed, Y up, metres. Environment and clips share world coordinates.",
+  "steer_node_suffix": "| steer",
+  "lateral_axis": [
+    -1,
+    0,
+    0
+  ],
+  "inrun_half_width_m": 3.8,
+  "landing_half_width_m": 8.15,
+  "centre_line_x": 45.0,
+  "steering_notes": "lateral_axis is glTF world -X (skier faces +Z, so their right is -X); the steer node is a child of the trajectory root, so its local X should be driven with the same sign. Half widths are measured from the jump centre line (x = 45) to the edge of the skiable snow surface: inrun snow 3.8 m (concrete side walls and handrails at 4.3 m); landing is the narrowest point at the knoll, widening downhill per landing_half_width_profile_m. The skier itself is ~0.43 m half-wide.",
+  "landing_half_width_profile_m": [
+    [
+      -65,
+      8.15
+    ],
+    [
+      -45,
+      9.6
+    ],
+    [
+      -25,
+      11.05
+    ],
+    [
+      -5,
+      12.5
+    ],
+    [
+      15,
+      14.0
+    ],
+    [
+      35,
+      15.45
+    ],
+    [
+      55,
+      16.9
+    ],
+    [
+      75,
+      17.5
+    ]
+  ],
+  "landing_half_width_profile_axes": "[glTF world Z, half width m]; interpolate linearly, clamp outside the range.",
+  "fall_clips": [
+    {
+      "scene": "Fall_000m",
+      "distance_m": 0,
+      "file": "animations/Fall_000m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 251,
+      "takeoff_frame": 112,
+      "landing_frame": 131,
+      "crash_frame": 137,
+      "rest_frame": 231
+    },
+    {
+      "scene": "Fall_005m",
+      "distance_m": 5,
+      "file": "animations/Fall_005m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 254,
+      "takeoff_frame": 112,
+      "landing_frame": 134,
+      "crash_frame": 140,
+      "rest_frame": 234
+    },
+    {
+      "scene": "Fall_010m",
+      "distance_m": 10,
+      "file": "animations/Fall_010m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 256,
+      "takeoff_frame": 112,
+      "landing_frame": 136,
+      "crash_frame": 142,
+      "rest_frame": 236
+    },
+    {
+      "scene": "Fall_015m",
+      "distance_m": 15,
+      "file": "animations/Fall_015m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 258,
+      "takeoff_frame": 112,
+      "landing_frame": 138,
+      "crash_frame": 144,
+      "rest_frame": 238
+    },
+    {
+      "scene": "Fall_020m",
+      "distance_m": 20,
+      "file": "animations/Fall_020m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 261,
+      "takeoff_frame": 112,
+      "landing_frame": 141,
+      "crash_frame": 147,
+      "rest_frame": 241
+    },
+    {
+      "scene": "Fall_025m",
+      "distance_m": 25,
+      "file": "animations/Fall_025m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 263,
+      "takeoff_frame": 112,
+      "landing_frame": 143,
+      "crash_frame": 149,
+      "rest_frame": 243
+    },
+    {
+      "scene": "Fall_030m",
+      "distance_m": 30,
+      "file": "animations/Fall_030m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 266,
+      "takeoff_frame": 112,
+      "landing_frame": 146,
+      "crash_frame": 152,
+      "rest_frame": 246
+    },
+    {
+      "scene": "Fall_035m",
+      "distance_m": 35,
+      "file": "animations/Fall_035m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 268,
+      "takeoff_frame": 112,
+      "landing_frame": 148,
+      "crash_frame": 154,
+      "rest_frame": 248
+    },
+    {
+      "scene": "Fall_040m",
+      "distance_m": 40,
+      "file": "animations/Fall_040m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 270,
+      "takeoff_frame": 112,
+      "landing_frame": 150,
+      "crash_frame": 156,
+      "rest_frame": 250
+    },
+    {
+      "scene": "Fall_045m",
+      "distance_m": 45,
+      "file": "animations/Fall_045m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 273,
+      "takeoff_frame": 112,
+      "landing_frame": 153,
+      "crash_frame": 159,
+      "rest_frame": 253
+    },
+    {
+      "scene": "Fall_050m",
+      "distance_m": 50,
+      "file": "animations/Fall_050m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 275,
+      "takeoff_frame": 112,
+      "landing_frame": 155,
+      "crash_frame": 161,
+      "rest_frame": 255
+    },
+    {
+      "scene": "Fall_055m",
+      "distance_m": 55,
+      "file": "animations/Fall_055m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 278,
+      "takeoff_frame": 112,
+      "landing_frame": 158,
+      "crash_frame": 164,
+      "rest_frame": 258
+    },
+    {
+      "scene": "Fall_060m",
+      "distance_m": 60,
+      "file": "animations/Fall_060m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 280,
+      "takeoff_frame": 112,
+      "landing_frame": 160,
+      "crash_frame": 166,
+      "rest_frame": 260
+    },
+    {
+      "scene": "Fall_065m",
+      "distance_m": 65,
+      "file": "animations/Fall_065m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 282,
+      "takeoff_frame": 112,
+      "landing_frame": 162,
+      "crash_frame": 168,
+      "rest_frame": 262
+    },
+    {
+      "scene": "Fall_070m",
+      "distance_m": 70,
+      "file": "animations/Fall_070m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 285,
+      "takeoff_frame": 112,
+      "landing_frame": 165,
+      "crash_frame": 171,
+      "rest_frame": 265
+    },
+    {
+      "scene": "Fall_075m",
+      "distance_m": 75,
+      "file": "animations/Fall_075m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 287,
+      "takeoff_frame": 112,
+      "landing_frame": 167,
+      "crash_frame": 173,
+      "rest_frame": 267
+    },
+    {
+      "scene": "Fall_080m",
+      "distance_m": 80,
+      "file": "animations/Fall_080m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 290,
+      "takeoff_frame": 112,
+      "landing_frame": 170,
+      "crash_frame": 176,
+      "rest_frame": 270
+    },
+    {
+      "scene": "Fall_085m",
+      "distance_m": 85,
+      "file": "animations/Fall_085m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 292,
+      "takeoff_frame": 112,
+      "landing_frame": 172,
+      "crash_frame": 178,
+      "rest_frame": 272
+    },
+    {
+      "scene": "Fall_090m",
+      "distance_m": 90,
+      "file": "animations/Fall_090m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 294,
+      "takeoff_frame": 112,
+      "landing_frame": 174,
+      "crash_frame": 180,
+      "rest_frame": 274
+    },
+    {
+      "scene": "Fall_095m",
+      "distance_m": 95,
+      "file": "animations/Fall_095m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 297,
+      "takeoff_frame": 112,
+      "landing_frame": 177,
+      "crash_frame": 183,
+      "rest_frame": 277
+    },
+    {
+      "scene": "Fall_100m",
+      "distance_m": 100,
+      "file": "animations/Fall_100m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 299,
+      "takeoff_frame": 112,
+      "landing_frame": 179,
+      "crash_frame": 185,
+      "rest_frame": 279
+    },
+    {
+      "scene": "Fall_105m",
+      "distance_m": 105,
+      "file": "animations/Fall_105m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 302,
+      "takeoff_frame": 112,
+      "landing_frame": 182,
+      "crash_frame": 188,
+      "rest_frame": 282
+    },
+    {
+      "scene": "Fall_110m",
+      "distance_m": 110,
+      "file": "animations/Fall_110m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 304,
+      "takeoff_frame": 112,
+      "landing_frame": 184,
+      "crash_frame": 190,
+      "rest_frame": 284
+    },
+    {
+      "scene": "Fall_115m",
+      "distance_m": 115,
+      "file": "animations/Fall_115m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 306,
+      "takeoff_frame": 112,
+      "landing_frame": 186,
+      "crash_frame": 192,
+      "rest_frame": 286
+    },
+    {
+      "scene": "Fall_120m",
+      "distance_m": 120,
+      "file": "animations/Fall_120m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 309,
+      "takeoff_frame": 112,
+      "landing_frame": 189,
+      "crash_frame": 195,
+      "rest_frame": 289
+    },
+    {
+      "scene": "Fall_125m",
+      "distance_m": 125,
+      "file": "animations/Fall_125m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 311,
+      "takeoff_frame": 112,
+      "landing_frame": 191,
+      "crash_frame": 197,
+      "rest_frame": 291
+    },
+    {
+      "scene": "Fall_130m",
+      "distance_m": 130,
+      "file": "animations/Fall_130m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 314,
+      "takeoff_frame": 112,
+      "landing_frame": 194,
+      "crash_frame": 200,
+      "rest_frame": 294
+    },
+    {
+      "scene": "Fall_135m",
+      "distance_m": 135,
+      "file": "animations/Fall_135m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 316,
+      "takeoff_frame": 112,
+      "landing_frame": 196,
+      "crash_frame": 202,
+      "rest_frame": 296
+    },
+    {
+      "scene": "Fall_140m",
+      "distance_m": 140,
+      "file": "animations/Fall_140m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 318,
+      "takeoff_frame": 112,
+      "landing_frame": 198,
+      "crash_frame": 204,
+      "rest_frame": 298
+    },
+    {
+      "scene": "Fall_145m",
+      "distance_m": 145,
+      "file": "animations/Fall_145m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 321,
+      "takeoff_frame": 112,
+      "landing_frame": 201,
+      "crash_frame": 207,
+      "rest_frame": 301
+    },
+    {
+      "scene": "Fall_150m",
+      "distance_m": 150,
+      "file": "animations/Fall_150m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 323,
+      "takeoff_frame": 112,
+      "landing_frame": 203,
+      "crash_frame": 209,
+      "rest_frame": 303
+    },
+    {
+      "scene": "Fall_155m",
+      "distance_m": 155,
+      "file": "animations/Fall_155m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 326,
+      "takeoff_frame": 112,
+      "landing_frame": 206,
+      "crash_frame": 212,
+      "rest_frame": 306
+    },
+    {
+      "scene": "Fall_160m",
+      "distance_m": 160,
+      "file": "animations/Fall_160m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 328,
+      "takeoff_frame": 112,
+      "landing_frame": 208,
+      "crash_frame": 214,
+      "rest_frame": 308
+    },
+    {
+      "scene": "Fall_165m",
+      "distance_m": 165,
+      "file": "animations/Fall_165m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 330,
+      "takeoff_frame": 112,
+      "landing_frame": 210,
+      "crash_frame": 216,
+      "rest_frame": 310
+    },
+    {
+      "scene": "Fall_170m",
+      "distance_m": 170,
+      "file": "animations/Fall_170m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 333,
+      "takeoff_frame": 112,
+      "landing_frame": 213,
+      "crash_frame": 219,
+      "rest_frame": 313
+    },
+    {
+      "scene": "Fall_175m",
+      "distance_m": 175,
+      "file": "animations/Fall_175m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 335,
+      "takeoff_frame": 112,
+      "landing_frame": 215,
+      "crash_frame": 221,
+      "rest_frame": 315
+    },
+    {
+      "scene": "Fall_180m",
+      "distance_m": 180,
+      "file": "animations/Fall_180m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 338,
+      "takeoff_frame": 112,
+      "landing_frame": 218,
+      "crash_frame": 224,
+      "rest_frame": 318
+    },
+    {
+      "scene": "Fall_185m",
+      "distance_m": 185,
+      "file": "animations/Fall_185m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 340,
+      "takeoff_frame": 112,
+      "landing_frame": 220,
+      "crash_frame": 226,
+      "rest_frame": 320
+    },
+    {
+      "scene": "Fall_190m",
+      "distance_m": 190,
+      "file": "animations/Fall_190m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 342,
+      "takeoff_frame": 112,
+      "landing_frame": 222,
+      "crash_frame": 228,
+      "rest_frame": 322
+    },
+    {
+      "scene": "Fall_195m",
+      "distance_m": 195,
+      "file": "animations/Fall_195m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 345,
+      "takeoff_frame": 112,
+      "landing_frame": 225,
+      "crash_frame": 231,
+      "rest_frame": 325
+    },
+    {
+      "scene": "Fall_200m",
+      "distance_m": 200,
+      "file": "animations/Fall_200m.glb",
+      "fps": 24,
+      "frame_start": 1,
+      "frame_end": 347,
+      "takeoff_frame": 112,
+      "landing_frame": 227,
+      "crash_frame": 233,
+      "rest_frame": 327
+    }
+  ],
+  "fall_notes": "Fall_XXXm is identical to Jump_XXXm up to landing_frame, then a crash: edge catch, face plant, somersault, slides on the back and comes to rest (crash_frame = skis start coming off, rest_frame = skier stopped). Skis and poles detach and are children of the steer node. Swap to the Fall clip before landing_frame to play a crash."
 }
