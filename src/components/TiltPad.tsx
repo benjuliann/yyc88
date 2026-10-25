@@ -8,6 +8,9 @@ const DEADZONE = 5; // degrees of tilt ignored around level
 const FULL_TILT = 45; // degrees of tilt for full left/right
 const JUMP_ACCEL = 4; // m/s² above gravity that counts as raising the phone
 const JUMP_COOLDOWN = 600; // ms
+// Take-off bar fill where the jump zone starts: the last ~0.35 s before the lip, which the game rates GOOD
+// or PERFECT (rateTakeoff in SkiJumpPage).
+const JUMP_ZONE = 0.925;
 
 // iOS only fires motion events after the page asks from a tap.
 type PermissionEvent = { requestPermission?: () => Promise<string> };
@@ -92,6 +95,12 @@ export default function TiltPad({ room }: { room: string }) {
   const myTurn = run?.turn === getPlayerId();
   const atGate = myTurn && run?.phase === "ready";
   const inrun = myTurn && run?.phase === "inrun";
+  const inZone = inrun && run.lip >= JUMP_ZONE;
+
+  // A short buzz on entering the jump zone, so it can be felt without looking.
+  useEffect(() => {
+    if (inZone) navigator.vibrate?.(200);
+  }, [inZone]);
   const hint = !myTurn
     ? "Wait for your turn"
     : atGate
@@ -122,9 +131,12 @@ export default function TiltPad({ room }: { room: string }) {
             style={{ left: `${50 + (inrun ? run.balance : 0) * 50}%`, transition: "left 0.1s linear" }}
           />
         </div>
-        <div className="ski-jump__meter-label">TAKE-OFF ↑</div>
-        <div className="ski-jump__lip">
+        <div className={`ski-jump__meter-label${inZone ? " ski-jump__lift-now" : ""}`}>
+          {inZone ? "LIFT NOW!" : "TAKE-OFF ↑"}
+        </div>
+        <div className="ski-jump__lip ski-jump__lip--phone">
           <div className="ski-jump__lip-fill" style={{ width: `${(inrun ? run.lip : 0) * 100}%`, transition: "width 0.1s linear" }} />
+          <div className="ski-jump__lip-zone" style={{ left: `${JUMP_ZONE * 100}%` }} />
         </div>
       </div>
 

@@ -69,6 +69,26 @@
   margin: 0 0 8px;
 }
 
+/* Phone: a big take-off bar with the jump zone marked, flashing LIFT NOW! once inside it. */
+.ski-jump__lip.ski-jump__lip--phone {
+  height: 36px;
+}
+
+.ski-jump__lip-zone {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(31, 163, 74, 0.6);
+  border-left: 3px solid #fff;
+}
+
+.ski-jump__lift-now {
+  font-size: 16px;
+  color: #ffe600;
+  animation: ski-jump-blink 0.4s steps(2) infinite;
+}
+
 .ski-jump__meter,
 .ski-jump__lip {
   position: relative;
