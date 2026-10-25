@@ -114,7 +114,7 @@ const randColor = () => pick(COLORS).value;
 const maybeColor = (chance: number) =>
   Math.random() < chance ? randColor() : null;
 
-const randomOutfit = (): Omit<SkierConfig, "name"> => ({
+export const randomOutfit = (): Omit<SkierConfig, "name"> => ({
   gear: pick<Gear>(["skis", "snowboard", "bobsled"]),
   gearColor: randColor(),
   hatStyle: pick<HatStyle>(["none", "beanie", "cap", "helmet"]),
