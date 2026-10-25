@@ -6,7 +6,7 @@ import { MODELS, DISTANCES, clipFile, fallFile, fixBlenderLights, type Manifest 
 import { playApplause, playCountdownBeep, playScoreSound, playWipeoutSound, stopCrowdSounds, syncSlopeSounds } from '../lib/scoreSounds'
 import { createSnowOverlay } from '../lib/snowOverlay'
 import { applyGearPose, applySkierConfig, loadSkierAccessories } from '../lib/skierCustomization'
-import { loadSkier } from './CustomizePage'
+import { loadSkier, type SkierConfig } from './CustomizePage'
 import '../styles/ski-jump.css'
 
 // All 41 clips are identical up to takeoff (takeoff_frame 112 in every clip of the manifest),
@@ -78,8 +78,11 @@ function landingHalfWidth(profile: [number, number][], z: number) {
 }
 
 // `onFinish` is set when the jump is part of a race: it's called once the jump is done.
-export default function SkiJumpPage({ onFinish }: { onFinish?: () => void }) {
+// `skier` is the racer's customized skier from the room; without it, the one saved in this browser.
+export default function SkiJumpPage({ onFinish, skier: racer }: { onFinish?: () => void; skier?: SkierConfig }) {
   const mountRef = useRef<HTMLDivElement>(null)
+  // Read once: the scene is built when the jump mounts.
+  const racerRef = useRef(racer)
   const needleRef = useRef<HTMLDivElement>(null)
   const lipFillRef = useRef<HTMLDivElement>(null)
   const [phase, setPhase] = useState<Phase>('loading')
@@ -109,8 +112,8 @@ export default function SkiJumpPage({ onFinish }: { onFinish?: () => void }) {
     scene.add(new THREE.HemisphereLight(0xffffff, 0x8a8a7a, 1))
 
     const loader = new GLTFLoader()
-    // The player's skier from the customizer (saved in this browser), applied to every clip as it loads.
-    const skier = loadSkier()
+    // The racer's skier from the customizer, applied to every clip as it loads.
+    const skier = racerRef.current ?? loadSkier()
     const accessories = loadSkierAccessories(`${MODELS}/skier-accessories.glb`)
     const loadSkierClip = (url: string) =>
       Promise.all([loader.loadAsync(url), accessories]).then(([gltf, acc]) => {

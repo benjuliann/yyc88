@@ -4,8 +4,8 @@ import Logo from '../components/Logo'
 import JoinRaceButton from '../components/JoinRaceButton'
 import TiltPad from '../components/TiltPad'
 import RotatePhone from '../components/RotatePhone'
-import { getPlayerId, isValidRoomCode, joinRoom, leaveRoom, watchPlayer, watchRoom, type Phase, type Player } from '../lib/room'
-import CustomizePage from './CustomizePage'
+import { getPlayerId, isValidRoomCode, joinRoom, leaveRoom, saveSkier, watchPlayer, watchRoom, type Phase, type Player } from '../lib/room'
+import CustomizePage, { type SkierConfig } from './CustomizePage'
 import '../styles/controller.css'
 
 export default function Controller() {
@@ -137,7 +137,18 @@ export function CustomizeSkier() {
   useEffect(() => watchRoom(room, setPhase), [room])
   useEffect(() => watchPlayer(room, getPlayerId(), setMe), [room])
 
+  // Saved to the room too, so the big screen can dress this player's skier.
+  const done = async (skier: SkierConfig) => {
+    try {
+      await saveSkier(room, getPlayerId(), skier)
+      navigate(`/play/${room}`)
+    } catch (err) {
+      console.error(err)
+      window.alert("Couldn't save your skier. Try again.")
+    }
+  }
+
   if (phase === undefined || me === undefined) return null
   if (phase !== 'lobby' || !me) return <Navigate to={`/play/${room}`} replace />
-  return <CustomizePage name={me.name} submitLabel="Done" onSubmit={() => navigate(`/play/${room}`)} />
+  return <CustomizePage name={me.name} submitLabel="Done" onSubmit={done} />
 }
