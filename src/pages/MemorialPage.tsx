@@ -27,7 +27,7 @@ const MemorialPage = () => {
       </header>
 
       <div className="memorial__intro">
-        <h1 className="memorial__title">The Memorial Wall</h1>
+        <h1 className="memorial__title">The Memorial Plaza</h1>
         <p className="memorial__subtitle">Names and memories from Calgary '88, laid brick by brick.</p>
       </div>
 

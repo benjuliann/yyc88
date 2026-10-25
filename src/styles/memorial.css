@@ -1,9 +1,9 @@
-/* Big-screen wall */
+/* Big-screen plaza */
 .memorial {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  padding: 36px 0 48px;
+  padding: 36px 0 0;
   overflow: hidden;
   background:
     linear-gradient(rgba(16, 26, 51, 0.6), rgba(16, 26, 51, 0.92)),
@@ -43,7 +43,7 @@
 }
 
 .memorial__intro {
-  margin: 48px 0 40px;
+  margin: 40px 0 0;
   padding: 0 16px;
   text-align: center;
 }
@@ -64,39 +64,61 @@
   color: rgba(244, 236, 224, 0.75);
 }
 
-/* The wall: rows of bricks drifting left forever. Each row holds its bricks twice,
-   so sliding it by half its width lands on an identical picture. */
-.wall {
-  --brick-width: 240px;
+/* The plaza: a brick floor tilted away from the viewer, slowly moving toward them
+   like walking across Olympic Plaza. The bricks are laid out twice, one copy above
+   the other, so moving down by half the track lands on an identical picture. */
+.plaza {
+  --brick-width: 260px;
+  --brick-height: 110px;
   --mortar: 8px;
-  display: flex;
-  flex-direction: column;
-  gap: var(--mortar);
-  padding: var(--mortar) 0;
+  position: relative;
+  flex: 1;
+  min-height: 55vh;
+  overflow: hidden;
+  perspective: 700px;
+  perspective-origin: 50% -20%;
+  /* Fade the far end of the floor into the night. */
+  mask-image: linear-gradient(to bottom, transparent, #000 45%);
+}
+
+.plaza__floor {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 2800px;
+  height: 2200px;
+  margin-left: -1400px;
+  overflow: hidden;
   background: #2b1f1c;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  transform-origin: 50% 100%;
+  transform: rotateX(62deg);
 }
 
-.wall__row {
+.plaza__track {
+  animation: walk var(--walk-duration) linear infinite;
+}
+
+.plaza__row {
   display: flex;
-  width: max-content;
-  animation: drift var(--drift-duration) linear infinite;
+  justify-content: center;
+  margin-bottom: var(--mortar); /* margin, not gap, so both copies are exactly the same height */
 }
 
-/* Offset every other row by half a brick, like a real brick wall. */
-.wall__row:nth-child(even) {
-  margin-left: calc((var(--brick-width) + var(--mortar)) / -2);
+/* Offset every other row by half a brick, like laid paving. */
+.plaza__row:nth-child(even) {
+  transform: translateX(calc((var(--brick-width) + var(--mortar)) / 2));
 }
 
-.wall__brick {
+.plaza__brick {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 4px;
+  flex: none;
+  gap: 6px;
   width: var(--brick-width);
-  height: 96px;
-  margin-right: var(--mortar); /* margin, not gap, so each half of the row is exactly the same width */
-  padding: 10px 16px;
+  height: var(--brick-height);
+  margin-right: var(--mortar);
+  padding: 12px 18px;
   border-radius: 3px;
   box-shadow:
     inset 0 2px 0 rgba(255, 255, 255, 0.12),
@@ -105,61 +127,61 @@
   overflow: hidden;
 }
 
-.wall__brick--0 {
+.plaza__brick--0 {
   background: #9b4434;
 }
 
-.wall__brick--1 {
+.plaza__brick--1 {
   background: #8a3a2d;
 }
 
-.wall__brick--2 {
+.plaza__brick--2 {
   background: #a5503c;
 }
 
-/* Text looks pressed into the brick. */
-.wall__name,
-.wall__message {
+/* Text looks engraved into the brick. */
+.plaza__name,
+.plaza__message {
   color: #f6e6d6;
   text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.45), 0 1px 0 rgba(255, 255, 255, 0.15);
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.wall__name {
+.plaza__name {
   font-weight: 500;
-  font-size: 0.95rem;
+  font-size: 1.1rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   white-space: nowrap;
 }
 
-.wall__message {
+.plaza__message {
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;
   -webkit-box-orient: vertical;
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   font-style: italic;
   line-height: 1.35;
   opacity: 0.85;
 }
 
-.wall__empty {
+.plaza__empty {
   text-align: center;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: rgba(244, 236, 224, 0.7);
 }
 
-@keyframes drift {
-  to {
-    transform: translateX(-50%);
+@keyframes walk {
+  from {
+    transform: translateY(-50%);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .wall__row {
+  .plaza__track {
     animation: none;
   }
 }
