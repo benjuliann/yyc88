@@ -1,0 +1,111 @@
+.menu-wrap {
+  position: relative;
+  z-index: 1;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.menu-wrap h2 {
+  font-size: 1rem;
+  margin: 20px 0 10px;
+  padding-top: 12px;
+  border-top: 1px solid #c3cfda;
+}
+
+/* sticky avatar */
+.skier-stage {
+  position: sticky;
+  top: 12px;
+  align-self: flex-start;
+  z-index: 2;
+  background: #dfeaf3;
+  border: 1px solid #c3cfda;
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+}
+
+/* idle animation */
+.breathe {
+  animation: breathe 3.4s ease-in-out infinite;
+  transform-origin: 100px 220px;
+}
+.sway {
+  animation: sway 3s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: top center;
+}
+.eye {
+  animation: blink 4.5s infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@keyframes breathe {
+  50% {
+    transform: translateY(-1.6px) scaleY(1.008);
+  }
+}
+@keyframes sway {
+  50% {
+    transform: rotate(5deg);
+  }
+}
+@keyframes blink {
+  0%,
+  92%,
+  100% {
+    transform: scaleY(1);
+  }
+  96% {
+    transform: scaleY(0.1);
+  }
+}
+
+/* snow */
+.snow {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+}
+.snow i {
+  position: absolute;
+  top: -12px;
+  border-radius: 50%;
+  background: #fff;
+  opacity: 0.75;
+  box-shadow: 0 0 3px rgba(80, 110, 140, 0.5);
+  animation: fall linear infinite;
+}
+@keyframes fall {
+  to {
+    transform: translate(var(--dx), 110vh);
+  }
+}
+
+/* phones: smaller, full-width avatar */
+@media (max-width: 600px) {
+  .skier-stage {
+    width: 100%;
+    padding: 8px;
+  }
+  .skier-stage svg {
+    height: 160px;
+    width: auto;
+  }
+}
+
+/* respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .snow {
+    display: none;
+  }
+  .breathe,
+  .sway,
+  .eye {
+    animation: none;
+  }
+}
