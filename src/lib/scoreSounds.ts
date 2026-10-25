@@ -19,10 +19,44 @@ export function playScoreSound(distance: number, rate = 1) {
 
 let wipeout: HTMLAudioElement | null = null
 
+let sad: HTMLAudioElement | null = null
+
+// Crash sound, then the sad trombone once it finishes.
 export function playWipeoutSound() {
   wipeout ??= new Audio('/sounds/e_s010.ogg')
+  sad ??= new Audio('/sounds/sad.mp3')
+  wipeout.onended = () => {
+    sad!.currentTime = 0
+    sad!.play().catch(() => {})
+  }
   wipeout.currentTime = 0
   wipeout.play().catch(() => {})
+}
+
+// Countdown: one F1 start-light beep on each of 3, 2, 1.
+let beep: HTMLAudioElement | null = null
+
+export function playCountdownBeep() {
+  beep ??= new Audio('/sounds/beep.mp3')
+  beep.currentTime = 0
+  beep.play().catch(() => {})
+}
+
+// Clean landing: crowd applause (8s, fades out on its own).
+let applause: HTMLAudioElement | null = null
+
+export function playApplause() {
+  applause ??= new Audio('/sounds/applause.mp3')
+  applause.volume = 0.7
+  applause.currentTime = 0
+  applause.play().catch(() => {})
+}
+
+// Cut off applause / sad trombone still playing from the last jump.
+export function stopCrowdSounds() {
+  if (wipeout) wipeout.onended = null
+  halt(applause)
+  halt(sad)
 }
 
 // Slope beds: ski loop on the in-run and again after the landing clip, wind loop in the air.
