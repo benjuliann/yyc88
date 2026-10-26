@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 const JoinRaceButton = ({
   variant = 'solid',
   to,
-  label = 'Join a race',
+  label = 'Start a race',
   onClick,
 }: {
   variant?: 'solid' | 'outline'
