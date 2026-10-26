@@ -49,8 +49,264 @@
   color: rgba(244, 236, 224, 0.7);
 }
 
+.landing__links {
+  position: fixed;
+  right: 16px;
+  bottom: 12px;
+  display: flex;
+  gap: 10px;
+}
+
+.icon-btn {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1.5px solid rgba(244, 236, 224, 0.7);
+  border-radius: 50%;
+  background: transparent;
+  color: #f4ece0;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.icon-btn:hover {
+  background: #f4ece0;
+  color: #101a33;
+}
+
+.icon-btn svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  margin: 0;
+  padding: 16px;
+  border: none;
+  background: rgba(8, 12, 24, 0.75);
+  color: #f4ece0;
+}
+
+.modal::backdrop {
+  background: transparent;
+}
+
+.modal__panel {
+  position: relative;
+  width: min(880px, 100%);
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 32px;
+  border: 1.5px solid rgba(244, 236, 224, 0.4);
+  border-radius: 16px;
+  background: #101a33;
+}
+
+.modal__title {
+  margin: 0 0 32px;
+  font-family: 'Exo 2', sans-serif;
+  font-size: clamp(2rem, 5vw, 3rem);
+  font-weight: 900;
+  font-style: italic;
+  text-align: center;
+}
+
+/* The trailer is 4:3; cap its width so it also fits the screen's height. */
+.modal__video {
+  display: block;
+  width: min(100%, calc((90vh - 120px) * 4 / 3));
+  margin: 0 auto;
+  aspect-ratio: 4 / 3;
+  border: 0;
+  border-radius: 8px;
+}
+
+.about {
+  max-width: 680px;
+  margin: 0 auto;
+  line-height: 1.7;
+  color: rgba(244, 236, 224, 0.85);
+}
+
+.about__lede {
+  margin: 0 0 20px;
+  font-family: 'Exo 2', sans-serif;
+  font-size: clamp(1.4rem, 3vw, 1.9rem);
+  font-weight: 900;
+  font-style: italic;
+  line-height: 1.2;
+  color: #f4ece0;
+}
+
+.about__shot {
+  flex: 1;
+  margin: 28px 0;
+}
+
+.about__shot button {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: zoom-in;
+}
+
+.about__shot img {
+  display: block;
+  width: 100%;
+  border-radius: 10px;
+  transition: filter 0.2s;
+}
+
+.about__shot button:hover img {
+  filter: brightness(1.1);
+}
+
+/* Zoomed screenshot, on top of the About modal */
+.zoom {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: none;
+  background: rgba(8, 12, 24, 0.85);
+}
+
+.zoom::backdrop {
+  background: transparent;
+}
+
+.zoom__img {
+  max-width: 90vw;
+  max-height: 90vh;
+  border-radius: 10px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.zoom__img--dragging {
+  cursor: grabbing;
+  transition: none;
+}
+
+/* Grow each shot by its aspect ratio so both images end up the same height. */
+.about__pair {
+  display: flex;
+  gap: 12px;
+}
+
+.about__pair .about__shot:first-child {
+  flex: 1.63;
+}
+
+.about__pair .about__shot:last-child {
+  flex: 2.16;
+}
+
+.about__closing {
+  margin: 28px 0 0;
+  font-weight: 600;
+  color: #f4ece0;
+}
+
+/* Credits: two columns under the title, like end credits */
+.credits {
+  display: flex;
+  justify-content: center;
+  gap: clamp(32px, 10vw, 120px);
+  padding-bottom: 8px;
+  text-align: center;
+}
+
+.credits__heading {
+  margin: 0 0 16px;
+  font-family: 'Exo 2', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 900;
+  font-style: italic;
+}
+
+.credits ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  line-height: 2;
+  color: rgba(244, 236, 224, 0.85);
+}
+
+.credits a {
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.credits a:hover {
+  color: #fff;
+  text-decoration: underline;
+}
+
+.modal__close {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  border: none;
+  background: none;
+  color: inherit;
+  font-size: 1.8rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
 @media (max-width: 600px) {
   .navbar .join-race {
     display: none;
+  }
+
+  .landing__disclaimer {
+    max-width: calc(100vw - 176px);
+  }
+
+  .modal__panel {
+    padding: 24px 16px;
+  }
+
+  .about__pair {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .about__pair .about__shot {
+    margin: 14px 0;
+  }
+
+  .credits {
+    flex-direction: column;
+    gap: 28px;
   }
 }

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import Logo from '../components/Logo'
 import JoinRaceButton from '../components/JoinRaceButton'
+import LandingLinks from '../components/LandingLinks'
 import { createRoom } from '../lib/room'
 import '../styles/landing.css'
 
@@ -33,6 +34,7 @@ const LandingPage = () => {
         <JoinRaceButton onClick={hostRace} />
         {error && <p className="landing__error">{error}</p>}
       </section>
+      <LandingLinks />
       <p className="landing__disclaimer">
         Not affiliated with or endorsed by the IOC, COC or CODA.
       </p>
